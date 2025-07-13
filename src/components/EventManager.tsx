@@ -142,74 +142,99 @@ export function EventManager({ organizationId }: EventManagerProps) {
   };
 
   return (
-    <div className="event-manager">
-      <div className="event-manager-header">
-        <h2>모임 관리</h2>
-        <button className="btn btn-primary" onClick={handleCreateEvent}>
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="flex justify-between items-center p-6 border-b border-slate-200 bg-slate-50">
+        <h2 className="text-xl font-semibold text-slate-900">모임 관리</h2>
+        <button
+          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg font-medium hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200"
+          onClick={handleCreateEvent}
+        >
           새 모임 생성
         </button>
       </div>
 
-      <div className="event-filters">
-        <div className="search-box">
+      <div className="flex gap-4 p-4 bg-slate-50 border-b border-slate-200 items-center">
+        <div className="relative flex-1 max-w-md">
           <input
             type="text"
             placeholder="모임 검색..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-3 pr-4 py-3 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10"
           />
         </div>
 
         <DateRangeFilter value={dateRange} onChange={setDateRange} />
       </div>
 
-      <div className="event-manager-content">
-        <div className="events-section">
-          <h3>모임 목록 ({filteredEvents.length}개)</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4">
+        <div className="lg:col-span-2 bg-white">
+          <h3 className="text-lg font-semibold text-slate-900 mb-3">
+            모임 목록 ({filteredEvents.length}개)
+          </h3>
 
           {filteredEvents.length === 0 ? (
-            <div className="empty-state">
-              <p>검색 조건에 맞는 모임이 없습니다.</p>
-              <button className="btn btn-primary" onClick={handleCreateEvent}>
+            <div className="text-center py-16">
+              <p className="text-slate-600 mb-4">
+                검색 조건에 맞는 모임이 없습니다.
+              </p>
+              <button
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg font-medium hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200"
+                onClick={handleCreateEvent}
+              >
                 첫 모임 생성하기
               </button>
             </div>
           ) : (
-            <div className="events-list">
+            <div className="flex flex-col gap-3">
               {filteredEvents.map((event) => (
-                <div key={event.id} className="event-card">
-                  <div className="event-header">
-                    <h4>{event.title}</h4>
+                <div
+                  key={event.id}
+                  className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <h4 className="text-base font-semibold text-slate-900">
+                      {event.title}
+                    </h4>
                     <span
-                      className="event-status"
+                      className="px-2 py-1 rounded-xl text-xs font-medium bg-slate-100 text-slate-600"
                       style={{ color: getStatusColor(event.status) }}
                     >
                       {getStatusLabel(event.status)}
                     </span>
                   </div>
 
-                  <div className="event-details">
-                    <p className="event-date">
+                  <div className="mb-3">
+                    <p className="flex items-center gap-1.5 text-xs text-slate-600 mb-1 font-medium text-slate-900">
                       📅 {dayjs(event.date).format('YYYY년 MM월 DD일')}
                     </p>
-                    <p className="event-location">📍 {event.location}</p>
-                    <p className="event-participants">
+                    <p className="flex items-center gap-1.5 text-xs text-slate-600 mb-1">
+                      📍 {event.location}
+                    </p>
+                    <p className="flex items-center gap-1.5 text-xs text-slate-600 mb-1">
                       👥 {event.attendees.length}명 참여
                     </p>
                     {event.description && (
-                      <p className="event-description">{event.description}</p>
+                      <p className="text-xs text-slate-600 leading-relaxed mt-2">
+                        {event.description}
+                      </p>
                     )}
                   </div>
 
-                  <div className="event-attendees">
-                    <h5>참여자 목록:</h5>
-                    <div className="attendees-list">
+                  <div className="mb-3">
+                    <h5 className="text-xs font-semibold text-slate-900 mb-1.5">
+                      참여자 목록:
+                    </h5>
+                    <div className="flex flex-wrap gap-1">
                       {event.attendees.map((attendeeId) => {
                         const member = organizationMembers.find(
                           (m) => m.id === attendeeId
                         );
                         return member ? (
-                          <span key={attendeeId} className="attendee-tag">
+                          <span
+                            key={attendeeId}
+                            className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-xl text-xs font-medium"
+                          >
                             {member.name}
                           </span>
                         ) : null;
@@ -217,15 +242,15 @@ export function EventManager({ organizationId }: EventManagerProps) {
                     </div>
                   </div>
 
-                  <div className="event-actions">
+                  <div className="flex gap-2 justify-end">
                     <button
-                      className="btn btn-outline"
+                      className="px-3 py-1.5 text-sm bg-transparent text-slate-600 border border-gray-300 rounded hover:bg-gray-50 hover:border-gray-400 transition-colors"
                       onClick={() => handleEditEvent(event)}
                     >
                       수정
                     </button>
                     <button
-                      className="btn btn-danger"
+                      className="px-3 py-1.5 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
                       onClick={() => handleDeleteEvent(event.id)}
                     >
                       삭제
@@ -237,10 +262,12 @@ export function EventManager({ organizationId }: EventManagerProps) {
           )}
         </div>
 
-        <div className="members-section">
-          <h3>구성원 현황 ({organizationMembers.length}명)</h3>
+        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+          <h3 className="text-base font-semibold text-slate-900 mb-3">
+            구성원 현황 ({organizationMembers.length}명)
+          </h3>
 
-          <div className="members-stats">
+          <div className="flex flex-col gap-2">
             {memberStats.map(
               ({
                 member,
@@ -251,34 +278,47 @@ export function EventManager({ organizationId }: EventManagerProps) {
               }) => (
                 <div
                   key={member.id}
-                  className={`member-stat-card ${isAtRisk ? 'at-risk' : ''}`}
+                  className={`bg-white border rounded-md p-3 transition-all duration-200 hover:shadow-md ${
+                    isAtRisk
+                      ? 'border-yellow-400 bg-yellow-50'
+                      : 'border-slate-200'
+                  }`}
                 >
-                  <div className="member-header">
-                    <h4>{member.name}</h4>
-                    <div className="member-badges">
-                      <span className="gender-badge">
+                  <div className="flex justify-between items-start mb-2 gap-2">
+                    <h4 className="text-sm font-semibold text-slate-900 flex-shrink-0">
+                      {member.name}
+                    </h4>
+                    <div className="flex gap-1 flex-wrap items-center">
+                      <span className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded text-xs font-medium">
                         {member.gender === 'male' ? '남' : '여'}
                       </span>
-                      <span className="age-badge">
+                      <span className="bg-green-100 text-green-800 px-1.5 py-0.5 rounded text-xs font-medium">
                         {new Date().getFullYear() - member.birthYear + 1}세
                       </span>
-                      <span className="location-badge">{member.district}</span>
+                      <span className="bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded text-xs font-medium">
+                        {member.district}
+                      </span>
                     </div>
                   </div>
-                  <div className="stat-summary">
-                    <div className="participation-stats">
-                      <span className="stat-item">
-                        <strong>
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-4">
+                      <span className="text-xs text-slate-600">
+                        <strong className="text-slate-900 font-semibold">
                           {attendedEvents}/{totalEvents}
                         </strong>{' '}
                         참여
                       </span>
-                      <span className="stat-item">
-                        <strong>{attendanceRate.toFixed(1)}%</strong> 참여율
+                      <span className="text-xs text-slate-600">
+                        <strong className="text-slate-900 font-semibold">
+                          {attendanceRate.toFixed(1)}%
+                        </strong>{' '}
+                        참여율
                       </span>
                     </div>
                     {isAtRisk && (
-                      <div className="risk-warning">⚠️ 참여율 저조</div>
+                      <div className="text-xs text-yellow-700 font-medium px-1.5 py-0.5 bg-yellow-200 rounded-sm inline-block flex-shrink-0">
+                        ⚠️ 참여율 저조
+                      </div>
                     )}
                   </div>
                 </div>

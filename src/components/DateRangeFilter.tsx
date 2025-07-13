@@ -135,20 +135,30 @@ export function DateRangeFilter({
   };
 
   return (
-    <div className={`date-range-filter ${className}`}>
-      <div className="date-filter-trigger" onClick={() => setIsOpen(!isOpen)}>
+    <div className={`relative inline-block ${className}`}>
+      <div
+        className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-lg cursor-pointer text-sm text-gray-700 transition-all duration-200 hover:border-gray-400 hover:bg-gray-50 min-w-[200px]"
+        onClick={() => setIsOpen(!isOpen)}
+      >
         <Calendar size={16} />
         <span>{getDisplayText()}</span>
-        <ChevronDown size={16} className={`chevron ${isOpen ? 'open' : ''}`} />
+        <ChevronDown
+          size={16}
+          className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+        />
       </div>
 
       {isOpen && (
-        <div className="date-filter-dropdown">
-          <div className="preset-options">
+        <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-50 mt-1 p-4">
+          <div className="flex flex-col gap-1 mb-4">
             {presets.map((preset) => (
               <button
                 key={preset.key}
-                className={`preset-option ${value.preset === preset.key ? 'active' : ''}`}
+                className={`px-3 py-2 rounded-md cursor-pointer text-sm text-gray-700 transition-all duration-200 hover:bg-gray-100 ${
+                  value.preset === preset.key
+                    ? 'bg-indigo-100 text-indigo-800 font-medium'
+                    : ''
+                }`}
                 onClick={() => handlePresetSelect(preset)}
               >
                 {preset.label}
@@ -157,34 +167,43 @@ export function DateRangeFilter({
           </div>
 
           {value.preset === 'custom' && (
-            <div className="custom-date-inputs">
-              <div className="date-input-group">
-                <label>시작일</label>
+            <div className="border-t border-gray-200 pt-4 mb-4">
+              <div className="flex flex-col gap-2 mb-3">
+                <label className="text-xs font-medium text-gray-700">
+                  시작일
+                </label>
                 <input
                   type="date"
                   value={customStartDate}
                   onChange={(e) => setCustomStartDate(e.target.value)}
                   onBlur={handleCustomDateChange}
+                  className="px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10"
                 />
               </div>
-              <div className="date-input-group">
-                <label>종료일</label>
+              <div className="flex flex-col gap-2 mb-3">
+                <label className="text-xs font-medium text-gray-700">
+                  종료일
+                </label>
                 <input
                   type="date"
                   value={customEndDate}
                   onChange={(e) => setCustomEndDate(e.target.value)}
                   onBlur={handleCustomDateChange}
+                  className="px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10"
                 />
               </div>
             </div>
           )}
 
-          <div className="filter-actions">
-            <button className="btn btn-secondary btn-sm" onClick={clearFilter}>
+          <div className="flex gap-2 justify-end">
+            <button
+              className="px-3 py-1.5 text-sm bg-slate-100 text-slate-600 border border-slate-200 rounded hover:bg-slate-200 transition-colors"
+              onClick={clearFilter}
+            >
               초기화
             </button>
             <button
-              className="btn btn-primary btn-sm"
+              className="px-3 py-1.5 text-sm bg-gradient-to-r from-primary to-secondary text-white rounded hover:shadow-lg transition-all duration-200"
               onClick={() => setIsOpen(false)}
             >
               적용
@@ -194,7 +213,7 @@ export function DateRangeFilter({
       )}
 
       {isOpen && (
-        <div className="dropdown-overlay" onClick={() => setIsOpen(false)} />
+        <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
       )}
     </div>
   );

@@ -109,65 +109,76 @@ export function OrganizationList({
   };
 
   return (
-    <div className="organization-list">
-      <div className="organization-header">
-        <h2>조직 관리</h2>
-        <button className="btn btn-primary" onClick={handleCreateOrganization}>
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="flex justify-between items-center p-6 border-b border-slate-200">
+        <h2 className="text-xl font-semibold text-slate-900">조직 관리</h2>
+        <button
+          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg font-medium hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200"
+          onClick={handleCreateOrganization}
+        >
           <Plus size={20} />새 조직 생성
         </button>
       </div>
 
       {organizations.length === 0 ? (
-        <div className="empty-state">
-          <p>아직 조직이 없습니다.</p>
+        <div className="text-center py-16">
+          <p className="text-slate-600 mb-4">아직 조직이 없습니다.</p>
           <button
-            className="btn btn-primary"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg font-medium hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200"
             onClick={handleCreateOrganization}
           >
             <Plus size={20} />첫 조직 생성하기
           </button>
         </div>
       ) : (
-        <div className="organization-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
           {organizations.map((org) => (
             <div
               key={org.id}
-              className="organization-card clickable"
+              className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:-translate-y-1 hover:shadow-xl hover:border-primary transition-all duration-300 cursor-pointer"
               onClick={() => onEditOrganization(org)}
               title={`${org.name} 관리하기`}
             >
-              <div className="card-header">
-                <h3>{org.name}</h3>
-                <span className="organization-type">
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-lg font-semibold text-primary">
+                  {org.name}
+                </h3>
+                <span className="bg-accent text-white px-3 py-1 rounded-full text-xs font-medium">
                   {getTypeLabel(org.type)}
                 </span>
               </div>
 
-              <div className="card-content">
-                <p className="organization-description">{org.description}</p>
+              <div className="mb-6">
+                <p className="text-slate-600 mb-4 leading-relaxed">
+                  {org.description}
+                </p>
                 {org.location && (
-                  <p className="organization-location">📍 {org.location}</p>
+                  <p className="text-slate-500 text-sm mb-2">
+                    📍 {org.location}
+                  </p>
                 )}
-                <p className="organization-capacity">
-                  <Users size={16} />
+                <p className="flex items-center gap-2 text-slate-500 text-sm font-medium">
+                  <Users size={16} className="text-primary" />
                   {org.currentMembers}/{org.maxMembers}명
                 </p>
-                <p className="click-hint">👆 클릭하여 관리하기</p>
+                <p className="text-primary text-xs font-medium mt-2 opacity-80 hover:opacity-100 transition-opacity">
+                  👆 클릭하여 관리하기
+                </p>
               </div>
 
               <div
-                className="card-actions"
+                className="flex gap-2 justify-end"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
-                  className="btn btn-secondary btn-sm"
+                  className="flex items-center justify-center w-10 h-10 bg-slate-100 text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-200 hover:scale-105 transition-all duration-200"
                   onClick={() => handleEditOrganization(org)}
                   title="조직 설정 수정"
                 >
                   <Edit size={16} />
                 </button>
                 <button
-                  className="btn btn-danger btn-sm"
+                  className="flex items-center justify-center w-10 h-10 bg-red-500 text-white rounded-lg hover:bg-red-600 hover:scale-105 transition-all duration-200"
                   onClick={() => handleDeleteOrganization(org.id)}
                   title="조직 삭제"
                 >
