@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { Organization, Member } from '../types';
 import {
@@ -29,7 +29,7 @@ import {
 import dayjs from 'dayjs';
 
 const { TextArea } = Input;
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { Option } = Select;
 
 interface OrganizationFormProps {
@@ -71,29 +71,31 @@ export function OrganizationForm({
         description: organization.description,
         location: organization.location,
         type: organization.type,
-        maxMembers: organization.maxMembers,
         settings: {
           participationRule:
             organization.settings?.participationRule || '제한없음',
         },
       });
+    } else {
+      form.setFieldsValue({
+        settings: {
+          participationRule: '제한없음',
+        },
+      });
+    }
+  }, [organization, form]);
 
+  useEffect(() => {
+    if (organization) {
       // 가입일 기준 내림차순 정렬
       const sortedMembers = [...currentMembers].sort(
         (a, b) => dayjs(b.joinedAt).valueOf() - dayjs(a.joinedAt).valueOf()
       );
       setDataSource(sortedMembers);
     } else {
-      form.setFieldsValue({
-        type: 'club',
-        maxMembers: 50,
-        settings: {
-          participationRule: '제한없음',
-        },
-      });
       setDataSource([]);
     }
-  }, [organization, form, currentMembers]);
+  }, [organization, currentMembers]);
 
   const handleSubmit = async (values: any) => {
     setLoading(true);
@@ -465,31 +467,20 @@ export function OrganizationForm({
             label="조직 유형"
             rules={[{ required: true, message: '조직 유형을 선택해주세요.' }]}
           >
-            <Select placeholder="조직 유형 선택" size="large">
+            <Select
+              placeholder="조직 유형 선택"
+              size="large"
+              onChange={console.log}
+            >
               <Option value="club">동호회</Option>
               <Option value="study">스터디</Option>
+              <Option value="culture">문화,취미</Option>
               <Option value="sports">스포츠</Option>
               <Option value="volunteer">봉사활동</Option>
               <Option value="business">비즈니스</Option>
               <Option value="social">사교모임</Option>
               <Option value="other">기타</Option>
             </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="maxMembers"
-            label="최대 구성원 수"
-            rules={[
-              { required: true, message: '최대 구성원 수를 입력해주세요.' },
-            ]}
-          >
-            <InputNumber
-              min={1}
-              max={1000}
-              placeholder="최대 구성원 수"
-              style={{ width: '100%' }}
-              size="large"
-            />
           </Form.Item>
         </Card>
 
