@@ -9,6 +9,19 @@ export interface User {
   updatedAt: Date;
 }
 
+// 조직 구성원 타입
+export interface Member {
+  id: string;
+  name: string;
+  gender: 'male' | 'female';
+  birthYear: number; // 년생
+  district: string; // 사는 구
+  organizationId: string;
+  status: 'active' | 'inactive';
+  joinedAt: Date;
+  updatedAt: Date;
+}
+
 // 조직 타입
 export interface Organization {
   id: string;
@@ -25,21 +38,16 @@ export interface Organization {
     | 'social'
     | 'other';
   maxMembers?: number;
+  currentMembers: number;
+  settings: OrganizationSettings;
+  createdBy: string;
   createdAt: Date;
   updatedAt: Date;
-  memberCount: number;
-  isActive: boolean;
-  settings: OrganizationSettings;
 }
 
 // 조직 설정 타입
 export interface OrganizationSettings {
-  isPublic: boolean;
-  allowSelfJoin: boolean;
-  requireApproval: boolean;
-  maxMembers?: number;
-  allowPublicJoin: boolean;
-  minAttendanceRate: number;
+  participationRule: string; // '제한없음' | '1' | '2' | ... | '10'
 }
 
 // 참여자 타입
@@ -60,14 +68,14 @@ export interface Event {
   id: string;
   organizationId: string;
   title: string;
-  description: string;
-  startDate: Date;
-  endDate: Date;
-  location?: string;
+  description?: string;
+  date: Date; // 단일 날짜
+  location: string;
+  hostId: string; // 주최자 ID (Member ID)
   maxParticipants?: number;
   currentParticipants: number;
   status: 'draft' | 'published' | 'ongoing' | 'completed' | 'cancelled';
-  attendees: string[]; // 참여자 ID 목록
+  attendees: string[]; // 참여자 ID 목록 (Member ID들)
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;

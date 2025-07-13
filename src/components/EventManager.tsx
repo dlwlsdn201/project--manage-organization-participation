@@ -1,229 +1,157 @@
 import React, { useState, useMemo } from 'react';
-import { useApp } from '../context/AppContext';
+import { useAppStore } from '../store/useAppStore';
+import { Event, Member } from '../types';
 import { EventForm } from './EventForm';
 import { DateRangeFilter } from './DateRangeFilter';
-import {
-  DateRangeFilter as DateRangeFilterType,
-  Event,
-  Participant,
-} from '../types';
-import {
-  Calendar,
-  MapPin,
-  Users,
-  Plus,
-  Edit,
-  Trash2,
-  UserCheck,
-  UserX,
-  Clock,
-  Search,
-} from 'lucide-react';
-import { format, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
+import dayjs from 'dayjs';
 
 interface EventManagerProps {
   organizationId: string;
 }
 
 export function EventManager({ organizationId }: EventManagerProps) {
-  const {
-    state,
-    addEvent,
-    updateEvent,
-    deleteEvent,
-    updateParticipant,
-    addActivityLog,
-  } = useApp();
-  const [showEventForm, setShowEventForm] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<Event | undefined>();
+  const { events, members, addEvent, updateEvent, deleteEvent } = useAppStore();
+  const [showForm, setShowForm] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState<DateRangeFilterType>({
-    preset: 'thisMonth',
-    startDate: startOfMonth(new Date()),
-    endDate: endOfMonth(new Date()),
-  });
+  const [dateRange, setDateRange] = useState<{
+    startDate?: Date;
+    endDate?: Date;
+    preset?: 'thisMonth' | 'lastMonth' | 'last3Months' | 'thisYear' | 'custom';
+  }>({ preset: 'thisMonth' });
 
-  const organization = state.organizations.find(
-    (org) => org.id === organizationId
-  );
-  const participants = state.participants.filter(
-    (p) => p.organizationId === organizationId
-  );
-  const events = state.events.filter(
+  // 현재 조직의 이벤트와 멤버 필터링
+  const organizationEvents = events.filter(
     (e) => e.organizationId === organizationId
   );
+  const organizationMembers = members.filter(
+    (m) => m.organizationId === organizationId
+  );
 
-  // 날짜 필터링된 이벤트
+  // 필터링된 이벤트 목록
   const filteredEvents = useMemo(() => {
-    let filtered = events;
+    return organizationEvents.filter((event) => {
+      const matchesSearch =
+        event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        event.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // 날짜 필터
-    if (dateFilter.startDate && dateFilter.endDate) {
-      filtered = filtered.filter((event) =>
-        isWithinInterval(event.startDate, {
-          start: dateFilter.startDate!,
-          end: dateFilter.endDate!,
-        })
+      let matchesDate = true;
+      if (dateRange.startDate && dateRange.endDate) {
+        const eventDate = dayjs(event.date);
+        matchesDate =
+          eventDate.isAfter(dayjs(dateRange.startDate).subtract(1, 'day')) &&
+          eventDate.isBefore(dayjs(dateRange.endDate).add(1, 'day'));
+      }
+
+      return matchesSearch && matchesDate;
+    });
+  }, [organizationEvents, searchTerm, dateRange]);
+
+  // 멤버별 참여 통계
+  const memberStats = useMemo(() => {
+    return organizationMembers.map((member) => {
+      const attendedEvents = organizationEvents.filter((event) =>
+        event.attendees.includes(member.id)
       );
-    }
-
-    // 검색 필터
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (event) =>
-          event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (event.location &&
-            event.location.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-    }
-
-    return filtered.sort(
-      (a, b) => b.startDate.getTime() - a.startDate.getTime()
-    );
-  }, [events, dateFilter, searchTerm]);
-
-  // 참여자별 통계
-  const participantStats = useMemo(() => {
-    return participants.map((participant) => {
-      const user = state.users.find((u) => u.id === participant.userId);
-      const participantEvents = filteredEvents.filter((event) =>
-        event.attendees.includes(participant.userId)
-      );
-
-      const totalEvents = filteredEvents.length;
-      const attendedEvents = participantEvents.length;
+      const totalEvents = organizationEvents.length;
       const attendanceRate =
-        totalEvents > 0 ? (attendedEvents / totalEvents) * 100 : 0;
+        totalEvents > 0 ? (attendedEvents.length / totalEvents) * 100 : 0;
 
       return {
-        participant,
-        user,
+        member,
+        attendedEvents: attendedEvents.length,
         totalEvents,
-        attendedEvents,
         attendanceRate,
-        lastAttendance:
-          participantEvents.length > 0
-            ? participantEvents[0].startDate
-            : undefined,
+        isAtRisk: attendanceRate < 50, // 50% 미만시 위험
       };
     });
-  }, [participants, filteredEvents, state.users]);
+  }, [organizationMembers, organizationEvents]);
 
   const handleCreateEvent = () => {
-    setEditingEvent(undefined);
-    setShowEventForm(true);
+    setEditingEvent(null);
+    setShowForm(true);
   };
 
   const handleEditEvent = (event: Event) => {
     setEditingEvent(event);
-    setShowEventForm(true);
+    setShowForm(true);
   };
 
-  const handleSubmitEvent = async (eventData: Partial<Event>) => {
-    try {
-      if (editingEvent) {
-        const updatedEvent: Event = {
-          ...editingEvent,
-          ...eventData,
-          updatedAt: new Date(),
-        };
-        updateEvent(updatedEvent);
-
-        addActivityLog({
-          id: Math.random().toString(36).substr(2, 9),
-          organizationId,
-          userId: state.user?.id || '',
-          action: 'event_updated',
-          details: `${updatedEvent.title} 모임을 수정했습니다.`,
-          timestamp: new Date(),
-          metadata: { eventTitle: updatedEvent.title },
-        });
-      } else {
-        const newEvent: Event = {
-          id: Math.random().toString(36).substr(2, 9),
-          ...eventData,
-          createdBy: state.user?.id || '',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        } as Event;
-
-        addEvent(newEvent);
-
-        addActivityLog({
-          id: Math.random().toString(36).substr(2, 9),
-          organizationId,
-          userId: state.user?.id || '',
-          action: 'event_created',
-          details: `${newEvent.title} 모임을 생성했습니다.`,
-          timestamp: new Date(),
-          metadata: { eventTitle: newEvent.title },
-        });
-      }
-
-      setShowEventForm(false);
-      setEditingEvent(undefined);
-    } catch (error) {
-      console.error('Event submission error:', error);
+  const handleDeleteEvent = (eventId: string) => {
+    if (window.confirm('정말로 이 모임을 삭제하시겠습니까?')) {
+      deleteEvent(eventId);
     }
   };
 
-  const handleDeleteEvent = (event: Event) => {
-    if (confirm(`정말로 "${event.title}" 모임을 삭제하시겠습니까?`)) {
-      deleteEvent(event.id);
-
-      addActivityLog({
-        id: Math.random().toString(36).substr(2, 9),
+  const handleFormSubmit = (data: Partial<Event>) => {
+    if (editingEvent) {
+      const updatedEvent: Event = {
+        ...editingEvent,
+        ...data,
+        updatedAt: new Date(),
+      };
+      updateEvent(updatedEvent);
+    } else {
+      const newEvent: Event = {
+        id: `event_${Date.now()}`,
         organizationId,
-        userId: state.user?.id || '',
-        action: 'event_deleted',
-        details: `${event.title} 모임을 삭제했습니다.`,
-        timestamp: new Date(),
-        metadata: { eventTitle: event.title },
-      });
+        title: data.title || '',
+        description: data.description || '',
+        date: data.date || new Date(),
+        location: data.location || '',
+        hostId: data.hostId || '',
+        maxParticipants: data.maxParticipants,
+        currentParticipants: data.attendees?.length || 0,
+        status: 'published',
+        attendees: data.attendees || [],
+        createdBy: 'current_user',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      addEvent(newEvent);
     }
+    setShowForm(false);
+    setEditingEvent(null);
   };
 
-  const handleParticipantStatusChange = (
-    participant: Participant,
-    newStatus: Participant['status']
-  ) => {
-    const updatedParticipant = { ...participant, status: newStatus };
-    updateParticipant(updatedParticipant);
-
-    const user = state.users.find((u) => u.id === participant.userId);
-    addActivityLog({
-      id: Math.random().toString(36).substr(2, 9),
-      organizationId,
-      userId: state.user?.id || '',
-      action: 'participant_status_changed',
-      details: `${user?.name || '알 수 없음'}님의 상태를 ${newStatus}로 변경했습니다.`,
-      timestamp: new Date(),
-      metadata: { participantName: user?.name, newStatus },
-    });
+  const handleFormCancel = () => {
+    setShowForm(false);
+    setEditingEvent(null);
   };
 
-  if (!organization) {
-    return <div>조직을 찾을 수 없습니다.</div>;
-  }
+  const getStatusLabel = (status: string) => {
+    const statusMap: { [key: string]: string } = {
+      draft: '임시저장',
+      published: '공개',
+      ongoing: '진행중',
+      completed: '완료',
+      cancelled: '취소',
+    };
+    return statusMap[status] || status;
+  };
+
+  const getStatusColor = (status: string) => {
+    const colorMap: { [key: string]: string } = {
+      draft: '#gray',
+      published: '#blue',
+      ongoing: '#green',
+      completed: '#purple',
+      cancelled: '#red',
+    };
+    return colorMap[status] || '#gray';
+  };
 
   return (
     <div className="event-manager">
       <div className="event-manager-header">
-        <div className="header-info">
-          <h2>{organization.name} - 모임 및 참여자 관리</h2>
-          <p>오프라인 모임 기록과 참여자 현황을 한눈에 확인하세요</p>
-        </div>
+        <h2>모임 관리</h2>
         <button className="btn btn-primary" onClick={handleCreateEvent}>
-          <Plus size={20} />
-          모임 기록 추가
+          새 모임 생성
         </button>
       </div>
 
-      {/* 필터 섹션 */}
       <div className="event-filters">
         <div className="search-box">
-          <Search size={20} />
           <input
             type="text"
             placeholder="모임 검색..."
@@ -231,94 +159,77 @@ export function EventManager({ organizationId }: EventManagerProps) {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <DateRangeFilter
-          value={dateFilter}
-          onChange={setDateFilter}
-          className="date-filter"
-        />
+
+        <DateRangeFilter value={dateRange} onChange={setDateRange} />
       </div>
 
       <div className="event-manager-content">
-        {/* 모임 목록 */}
         <div className="events-section">
-          <h3>모임 기록 ({filteredEvents.length}개)</h3>
+          <h3>모임 목록 ({filteredEvents.length}개)</h3>
 
           {filteredEvents.length === 0 ? (
             <div className="empty-state">
-              <Calendar size={48} className="text-gray-400" />
-              <p>등록된 모임이 없습니다.</p>
+              <p>검색 조건에 맞는 모임이 없습니다.</p>
               <button className="btn btn-primary" onClick={handleCreateEvent}>
-                첫 모임 기록하기
+                첫 모임 생성하기
               </button>
             </div>
           ) : (
-            <div className="event-list">
+            <div className="events-list">
               {filteredEvents.map((event) => (
                 <div key={event.id} className="event-card">
-                  <div className="event-content">
-                    <div className="event-header">
-                      <h4>{event.title}</h4>
-                      <div className="event-actions">
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => handleEditEvent(event)}
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => handleDeleteEvent(event)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
+                  <div className="event-header">
+                    <h4>{event.title}</h4>
+                    <span
+                      className="event-status"
+                      style={{ color: getStatusColor(event.status) }}
+                    >
+                      {getStatusLabel(event.status)}
+                    </span>
+                  </div>
 
-                    <p className="event-description">{event.description}</p>
+                  <div className="event-details">
+                    <p className="event-date">
+                      📅 {dayjs(event.date).format('YYYY년 MM월 DD일')}
+                    </p>
+                    <p className="event-location">📍 {event.location}</p>
+                    <p className="event-participants">
+                      👥 {event.attendees.length}명 참여
+                    </p>
+                    {event.description && (
+                      <p className="event-description">{event.description}</p>
+                    )}
+                  </div>
 
-                    <div className="event-meta">
-                      <div className="meta-item">
-                        <Calendar size={16} />
-                        <span>
-                          {format(event.startDate, 'yyyy.MM.dd HH:mm')}
-                        </span>
-                      </div>
-                      {event.location && (
-                        <div className="meta-item">
-                          <MapPin size={16} />
-                          <span>{event.location}</span>
-                        </div>
-                      )}
-                      <div className="meta-item">
-                        <Users size={16} />
-                        <span>{event.attendees.length}명 참여</span>
-                      </div>
+                  <div className="event-attendees">
+                    <h5>참여자 목록:</h5>
+                    <div className="attendees-list">
+                      {event.attendees.map((attendeeId) => {
+                        const member = organizationMembers.find(
+                          (m) => m.id === attendeeId
+                        );
+                        return member ? (
+                          <span key={attendeeId} className="attendee-tag">
+                            {member.name}
+                          </span>
+                        ) : null;
+                      })}
                     </div>
+                  </div>
 
-                    {/* 참여자 목록 */}
-                    <div className="event-attendees">
-                      <h5>참여자</h5>
-                      <div className="attendee-list">
-                        {event.attendees.map((userId) => {
-                          const user = state.users.find((u) => u.id === userId);
-                          const participant = participants.find(
-                            (p) => p.userId === userId
-                          );
-                          return (
-                            <div key={userId} className="attendee-item">
-                              <span className="attendee-name">
-                                {user?.name || '알 수 없음'}
-                              </span>
-                              <span
-                                className={`role-badge ${participant?.role}`}
-                              >
-                                {participant?.role}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
+                  <div className="event-actions">
+                    <button
+                      className="btn btn-outline"
+                      onClick={() => handleEditEvent(event)}
+                    >
+                      수정
+                    </button>
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => handleDeleteEvent(event.id)}
+                    >
+                      삭제
+                    </button>
                   </div>
                 </div>
               ))}
@@ -326,87 +237,63 @@ export function EventManager({ organizationId }: EventManagerProps) {
           )}
         </div>
 
-        {/* 참여자 현황 */}
-        <div className="participants-section">
-          <h3>참여자 현황 ({participants.length}명)</h3>
+        <div className="members-section">
+          <h3>구성원 현황 ({organizationMembers.length}명)</h3>
 
-          <div className="participant-stats-grid">
-            {participantStats.map((stat) => (
-              <div key={stat.participant.id} className="participant-stat-card">
-                <div className="participant-info">
-                  <div className="participant-name">
-                    {stat.user?.name || '알 수 없음'}
+          <div className="members-stats">
+            {memberStats.map(
+              ({
+                member,
+                attendedEvents,
+                totalEvents,
+                attendanceRate,
+                isAtRisk,
+              }) => (
+                <div
+                  key={member.id}
+                  className={`member-stat-card ${isAtRisk ? 'at-risk' : ''}`}
+                >
+                  <div className="member-header">
+                    <h4>{member.name}</h4>
+                    <div className="member-badges">
+                      <span className="gender-badge">
+                        {member.gender === 'male' ? '남' : '여'}
+                      </span>
+                      <span className="age-badge">
+                        {new Date().getFullYear() - member.birthYear + 1}세
+                      </span>
+                      <span className="location-badge">{member.district}</span>
+                    </div>
                   </div>
-                  <div className="participant-role">
-                    {stat.participant.role}
+                  <div className="stat-summary">
+                    <div className="participation-stats">
+                      <span className="stat-item">
+                        <strong>
+                          {attendedEvents}/{totalEvents}
+                        </strong>{' '}
+                        참여
+                      </span>
+                      <span className="stat-item">
+                        <strong>{attendanceRate.toFixed(1)}%</strong> 참여율
+                      </span>
+                    </div>
+                    {isAtRisk && (
+                      <div className="risk-warning">⚠️ 참여율 저조</div>
+                    )}
                   </div>
                 </div>
-
-                <div className="participation-stats">
-                  <div className="stat-item">
-                    <span className="stat-label">참여율</span>
-                    <span
-                      className={`stat-value ${
-                        stat.attendanceRate >= 80
-                          ? 'high'
-                          : stat.attendanceRate >= 60
-                            ? 'medium'
-                            : 'low'
-                      }`}
-                    >
-                      {stat.attendanceRate.toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-label">참여 횟수</span>
-                    <span className="stat-value">
-                      {stat.attendedEvents} / {stat.totalEvents}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="participant-actions">
-                  {stat.participant.status === 'active' ? (
-                    <button
-                      className="btn btn-warning btn-sm"
-                      onClick={() =>
-                        handleParticipantStatusChange(
-                          stat.participant,
-                          'inactive'
-                        )
-                      }
-                    >
-                      <UserX size={16} />
-                      비활성화
-                    </button>
-                  ) : (
-                    <button
-                      className="btn btn-success btn-sm"
-                      onClick={() =>
-                        handleParticipantStatusChange(
-                          stat.participant,
-                          'active'
-                        )
-                      }
-                    >
-                      <UserCheck size={16} />
-                      활성화
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
         </div>
       </div>
 
-      {/* 이벤트 폼 모달 */}
-      {showEventForm && (
+      {showForm && (
         <EventForm
-          event={editingEvent}
-          onSubmit={handleSubmitEvent}
-          onCancel={() => setShowEventForm(false)}
-          organizations={state.organizations}
+          event={editingEvent || undefined}
+          organizationId={organizationId}
+          onSubmit={handleFormSubmit}
+          onCancel={handleFormCancel}
         />
       )}
     </div>

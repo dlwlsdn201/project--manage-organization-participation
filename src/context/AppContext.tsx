@@ -4,6 +4,7 @@ import {
   Participant,
   Event,
   User,
+  Member,
   ActivityLog,
   AttendanceRecord,
   AttendanceStats,
@@ -16,6 +17,7 @@ interface AppState {
   users: User[];
   organizations: Organization[];
   participants: Participant[];
+  members: Member[];
   events: Event[];
   activityLogs: ActivityLog[];
   attendanceRecords: AttendanceRecord[];
@@ -38,6 +40,10 @@ type AppAction =
   | { type: 'ADD_PARTICIPANT'; payload: Participant }
   | { type: 'UPDATE_PARTICIPANT'; payload: Participant }
   | { type: 'DELETE_PARTICIPANT'; payload: string }
+  | { type: 'SET_MEMBERS'; payload: Member[] }
+  | { type: 'ADD_MEMBER'; payload: Member }
+  | { type: 'UPDATE_MEMBER'; payload: Member }
+  | { type: 'DELETE_MEMBER'; payload: string }
   | { type: 'SET_EVENTS'; payload: Event[] }
   | { type: 'ADD_EVENT'; payload: Event }
   | { type: 'UPDATE_EVENT'; payload: Event }
@@ -54,6 +60,7 @@ const initialState: AppState = {
   users: [],
   organizations: [],
   participants: [],
+  members: [],
   events: [],
   activityLogs: [],
   attendanceRecords: [],
@@ -131,6 +138,29 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ),
       };
 
+    case 'SET_MEMBERS':
+      return { ...state, members: action.payload };
+
+    case 'ADD_MEMBER':
+      return {
+        ...state,
+        members: [...state.members, action.payload],
+      };
+
+    case 'UPDATE_MEMBER':
+      return {
+        ...state,
+        members: state.members.map((member) =>
+          member.id === action.payload.id ? action.payload : member
+        ),
+      };
+
+    case 'DELETE_MEMBER':
+      return {
+        ...state,
+        members: state.members.filter((member) => member.id !== action.payload),
+      };
+
     case 'SET_EVENTS':
       return { ...state, events: action.payload };
 
@@ -190,6 +220,9 @@ interface AppContextType {
   addParticipant: (participant: Participant) => void;
   updateParticipant: (participant: Participant) => void;
   deleteParticipant: (id: string) => void;
+  addMember: (member: Member) => void;
+  updateMember: (member: Member) => void;
+  deleteMember: (id: string) => void;
   addEvent: (event: Event) => void;
   updateEvent: (event: Event) => void;
   deleteEvent: (id: string) => void;
@@ -242,6 +275,18 @@ export function AppProvider({ children }: AppProviderProps) {
     dispatch({ type: 'DELETE_PARTICIPANT', payload: id });
   };
 
+  const addMember = (member: Member) => {
+    dispatch({ type: 'ADD_MEMBER', payload: member });
+  };
+
+  const updateMember = (member: Member) => {
+    dispatch({ type: 'UPDATE_MEMBER', payload: member });
+  };
+
+  const deleteMember = (id: string) => {
+    dispatch({ type: 'DELETE_MEMBER', payload: id });
+  };
+
   const addEvent = (event: Event) => {
     dispatch({ type: 'ADD_EVENT', payload: event });
   };
@@ -277,6 +322,9 @@ export function AppProvider({ children }: AppProviderProps) {
     addParticipant,
     updateParticipant,
     deleteParticipant,
+    addMember,
+    updateMember,
+    deleteMember,
     addEvent,
     updateEvent,
     deleteEvent,

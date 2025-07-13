@@ -1,365 +1,276 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useApp } from '../context/AppContext';
+import React, { useState, useMemo } from 'react';
+import { useAppStore } from '../store/useAppStore';
 import { DateRangeFilter } from './DateRangeFilter';
-import {
-  DateRangeFilter as DateRangeFilterType,
-  AttendanceStats,
-  OrganizationRules,
-} from '../types';
-import {
-  AlertTriangle,
-  TrendingUp,
-  TrendingDown,
-  Users,
-  Calendar,
-  Award,
-  AlertCircle,
-} from 'lucide-react';
-import {
-  format,
-  isWithinInterval,
-  startOfMonth,
-  endOfMonth,
-  subMonths,
-} from 'date-fns';
+import { Member, Event } from '../types';
+import dayjs from 'dayjs';
 
 interface AttendanceTrackerProps {
   organizationId: string;
 }
 
 export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
-  const { state } = useApp();
-  const [dateFilter, setDateFilter] = useState<DateRangeFilterType>({
-    preset: 'thisMonth',
-    startDate: startOfMonth(new Date()),
-    endDate: endOfMonth(new Date()),
-  });
-  const [showWarningDialog, setShowWarningDialog] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<string | null>(null);
+  const { members, events } = useAppStore();
+  const [dateRange, setDateRange] = useState<{
+    startDate?: Date;
+    endDate?: Date;
+    preset?: 'thisMonth' | 'lastMonth' | 'last3Months' | 'thisYear' | 'custom';
+  }>({ preset: 'thisMonth' });
 
-  const organization = state.organizations.find(
-    (org) => org.id === organizationId
+  // 현재 조직의 데이터 필터링
+  const organizationMembers = members.filter(
+    (m) => m.organizationId === organizationId
   );
-  const organizationRules = state.organizationRules.find(
-    (rule) => rule.organizationId === organizationId
-  );
-
-  // 기본 규칙 설정
-  const defaultRules: OrganizationRules = {
-    organizationId,
-    minAttendancePerMonth: 2,
-    warningThreshold: 1,
-    autoRemoveAfterWarnings: 3,
-  };
-
-  const rules = organizationRules || defaultRules;
-
-  // 참여자 및 이벤트 데이터
-  const participants = state.participants.filter(
-    (p) => p.organizationId === organizationId
-  );
-  const events = state.events.filter(
+  const organizationEvents = events.filter(
     (e) => e.organizationId === organizationId
   );
 
-  // 날짜 필터링된 이벤트
+  // 날짜 범위에 따른 이벤트 필터링
   const filteredEvents = useMemo(() => {
-    if (!dateFilter.startDate || !dateFilter.endDate) return events;
+    if (!dateRange.startDate || !dateRange.endDate) {
+      return organizationEvents;
+    }
 
-    return events.filter((event) => {
-      return isWithinInterval(event.startDate, {
-        start: dateFilter.startDate!,
-        end: dateFilter.endDate!,
-      });
-    });
-  }, [events, dateFilter]);
-
-  // 참여 통계 계산
-  const attendanceStats = useMemo(() => {
-    return participants.map((participant) => {
-      const user = state.users.find((u) => u.id === participant.userId);
-      const participantEvents = filteredEvents.filter((event) =>
-        event.attendees.includes(participant.userId)
+    return organizationEvents.filter((event) => {
+      const eventDate = dayjs(event.date);
+      return (
+        eventDate.isAfter(dayjs(dateRange.startDate).subtract(1, 'day')) &&
+        eventDate.isBefore(dayjs(dateRange.endDate).add(1, 'day'))
       );
+    });
+  }, [organizationEvents, dateRange]);
 
+  // 멤버별 참여 통계 계산
+  const memberStats = useMemo(() => {
+    return organizationMembers.map((member) => {
+      const attendedEvents = filteredEvents.filter((event) =>
+        event.attendees.includes(member.id)
+      );
       const totalEvents = filteredEvents.length;
-      const attendedEvents = participantEvents.length;
       const attendanceRate =
-        totalEvents > 0 ? (attendedEvents / totalEvents) * 100 : 0;
+        totalEvents > 0 ? (attendedEvents.length / totalEvents) * 100 : 0;
 
-      const lastAttendance =
-        participantEvents.length > 0
-          ? participantEvents.sort(
-              (a, b) => b.startDate.getTime() - a.startDate.getTime()
-            )[0].startDate
-          : undefined;
-
-      const isAtRisk = attendedEvents < rules.minAttendancePerMonth;
+      // 최소 참여 규칙 (월 2회 기본)
+      const minAttendancePerMonth = 2;
+      const monthsInRange =
+        dateRange.startDate && dateRange.endDate
+          ? Math.max(
+              1,
+              dayjs(dateRange.endDate).diff(
+                dayjs(dateRange.startDate),
+                'month'
+              ) + 1
+            )
+          : 1;
+      const requiredAttendance = minAttendancePerMonth * monthsInRange;
+      const isAtRisk = attendedEvents.length < requiredAttendance;
 
       return {
-        participant,
-        user,
+        member,
+        attendedEvents: attendedEvents.length,
         totalEvents,
-        attendedEvents,
         attendanceRate,
-        lastAttendance,
+        requiredAttendance,
         isAtRisk,
-        warningCount: 0, // 실제로는 데이터베이스에서 가져와야 함
+        deficit: Math.max(0, requiredAttendance - attendedEvents.length),
       };
     });
-  }, [participants, filteredEvents, rules.minAttendancePerMonth, state.users]);
+  }, [organizationMembers, filteredEvents, dateRange]);
 
-  // 통계 요약
-  const summary = useMemo(() => {
-    const totalMembers = attendanceStats.length;
-    const activeMembers = attendanceStats.filter(
-      (stat) => stat.attendedEvents > 0
-    ).length;
-    const atRiskMembers = attendanceStats.filter(
-      (stat) => stat.isAtRisk
-    ).length;
-    const averageAttendance =
-      attendanceStats.reduce((sum, stat) => sum + stat.attendanceRate, 0) /
-        totalMembers || 0;
+  // 위험 멤버 수
+  const riskMemberCount = memberStats.filter((stat) => stat.isAtRisk).length;
 
-    return {
-      totalMembers,
-      activeMembers,
-      atRiskMembers,
-      averageAttendance,
-    };
-  }, [attendanceStats]);
-
-  const handleWarnMember = (participantId: string) => {
-    setSelectedMember(participantId);
-    setShowWarningDialog(true);
+  // 전체 통계
+  const overallStats = {
+    totalMembers: organizationMembers.length,
+    totalEvents: filteredEvents.length,
+    averageAttendanceRate:
+      memberStats.length > 0
+        ? memberStats.reduce((sum, stat) => sum + stat.attendanceRate, 0) /
+          memberStats.length
+        : 0,
+    riskMemberCount,
+    activeMembers: memberStats.filter((stat) => stat.attendedEvents > 0).length,
   };
 
-  const handleRemoveMember = (participantId: string) => {
-    if (confirm('정말로 이 멤버를 조직에서 제거하시겠습니까?')) {
-      // 실제로는 API 호출을 통해 멤버 제거
-      console.log('멤버 제거:', participantId);
+  const handleWarning = (memberId: string) => {
+    // 경고 처리 로직
+    console.log(`Warning sent to member: ${memberId}`);
+  };
+
+  const handleRemove = (memberId: string) => {
+    // 강퇴 처리 로직
+    if (window.confirm('정말로 이 구성원을 강퇴하시겠습니까?')) {
+      console.log(`Member removed: ${memberId}`);
     }
   };
-
-  const getAttendanceColor = (rate: number) => {
-    if (rate >= 80) return 'text-green-500';
-    if (rate >= 60) return 'text-yellow-500';
-    if (rate >= 40) return 'text-orange-500';
-    return 'text-red-500';
-  };
-
-  const getAttendanceIcon = (rate: number) => {
-    if (rate >= 60) return <TrendingUp size={16} className="text-green-500" />;
-    return <TrendingDown size={16} className="text-red-500" />;
-  };
-
-  if (!organization) {
-    return <div>조직을 찾을 수 없습니다.</div>;
-  }
 
   return (
     <div className="attendance-tracker">
       <div className="attendance-header">
-        <h2>{organization.name} - 참여 현황</h2>
-        <div className="attendance-filters">
-          <DateRangeFilter
-            value={dateFilter}
-            onChange={setDateFilter}
-            className="date-filter"
-          />
+        <h2>참여 분석</h2>
+        <DateRangeFilter value={dateRange} onChange={setDateRange} />
+      </div>
+
+      {/* 전체 통계 요약 */}
+      <div className="stats-summary">
+        <div className="stat-card">
+          <h3>전체 구성원</h3>
+          <span className="stat-value">{overallStats.totalMembers}명</span>
+        </div>
+        <div className="stat-card">
+          <h3>총 모임 수</h3>
+          <span className="stat-value">{overallStats.totalEvents}회</span>
+        </div>
+        <div className="stat-card">
+          <h3>평균 참여율</h3>
+          <span className="stat-value">
+            {overallStats.averageAttendanceRate.toFixed(1)}%
+          </span>
+        </div>
+        <div className="stat-card danger">
+          <h3>위험 구성원</h3>
+          <span className="stat-value">{overallStats.riskMemberCount}명</span>
+        </div>
+        <div className="stat-card">
+          <h3>활성 구성원</h3>
+          <span className="stat-value">{overallStats.activeMembers}명</span>
         </div>
       </div>
 
-      {/* 통계 요약 */}
-      <div className="attendance-summary">
-        <div className="stat-card">
-          <div className="stat-icon">
-            <Users className="icon-blue" />
-          </div>
-          <div className="stat-content">
-            <div className="stat-number">{summary.totalMembers}</div>
-            <div className="stat-label">전체 멤버</div>
-          </div>
-        </div>
+      {/* 구성원별 상세 분석 */}
+      <div className="member-analysis">
+        <h3>구성원별 참여 현황</h3>
 
-        <div className="stat-card">
-          <div className="stat-icon">
-            <TrendingUp className="icon-green" />
+        {memberStats.length === 0 ? (
+          <div className="empty-state">
+            <p>구성원이 없습니다.</p>
           </div>
-          <div className="stat-content">
-            <div className="stat-number">{summary.activeMembers}</div>
-            <div className="stat-label">활성 멤버</div>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">
-            <AlertTriangle className="icon-red" />
-          </div>
-          <div className="stat-content">
-            <div className="stat-number">{summary.atRiskMembers}</div>
-            <div className="stat-label">위험 멤버</div>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon">
-            <Award className="icon-blue" />
-          </div>
-          <div className="stat-content">
-            <div className="stat-number">
-              {summary.averageAttendance.toFixed(1)}%
-            </div>
-            <div className="stat-label">평균 참여율</div>
-          </div>
-        </div>
-      </div>
-
-      {/* 조직 규칙 */}
-      <div className="organization-rules">
-        <h3>조직 규칙</h3>
-        <div className="rules-grid">
-          <div className="rule-item">
-            <span className="rule-label">월 최소 참여 횟수:</span>
-            <span className="rule-value">{rules.minAttendancePerMonth}회</span>
-          </div>
-          <div className="rule-item">
-            <span className="rule-label">경고 기준:</span>
-            <span className="rule-value">{rules.warningThreshold}회 미만</span>
-          </div>
-          <div className="rule-item">
-            <span className="rule-label">자동 제거 기준:</span>
-            <span className="rule-value">
-              경고 {rules.autoRemoveAfterWarnings}회
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 멤버 참여 현황 */}
-      <div className="attendance-list">
-        <h3>멤버별 참여 현황</h3>
-        <div className="attendance-table">
-          <div className="table-header">
-            <div className="col-member">멤버</div>
-            <div className="col-attendance">참여 현황</div>
-            <div className="col-rate">참여율</div>
-            <div className="col-last">마지막 참여</div>
-            <div className="col-actions">관리</div>
-          </div>
-
-          {attendanceStats.map((stat) => (
-            <div
-              key={stat.participant.id}
-              className={`table-row ${stat.isAtRisk ? 'at-risk' : ''}`}
-            >
-              <div className="col-member">
-                <div className="member-info">
-                  <div className="member-name">
-                    {stat.user?.name || '알 수 없음'}
-                  </div>
-                  <div className="member-role">{stat.participant.role}</div>
-                  {stat.isAtRisk && (
-                    <AlertCircle size={16} className="text-red-500" />
+        ) : (
+          <div className="member-stats-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>이름</th>
+                  <th>성별</th>
+                  <th>나이</th>
+                  <th>거주지</th>
+                  <th>참여 횟수</th>
+                  <th>참여율</th>
+                  <th>필요 참여</th>
+                  <th>부족분</th>
+                  <th>상태</th>
+                  <th>관리</th>
+                </tr>
+              </thead>
+              <tbody>
+                {memberStats
+                  .sort((a, b) => b.attendanceRate - a.attendanceRate)
+                  .map(
+                    ({
+                      member,
+                      attendedEvents,
+                      totalEvents,
+                      attendanceRate,
+                      requiredAttendance,
+                      isAtRisk,
+                      deficit,
+                    }) => (
+                      <tr key={member.id} className={isAtRisk ? 'at-risk' : ''}>
+                        <td className="member-name">{member.name}</td>
+                        <td>{member.gender === 'male' ? '남성' : '여성'}</td>
+                        <td>
+                          {new Date().getFullYear() - member.birthYear + 1}세
+                        </td>
+                        <td>{member.district}</td>
+                        <td>
+                          {attendedEvents}/{totalEvents}
+                        </td>
+                        <td
+                          className={`attendance-rate ${attendanceRate < 50 ? 'low' : attendanceRate < 80 ? 'medium' : 'high'}`}
+                        >
+                          {attendanceRate.toFixed(1)}%
+                        </td>
+                        <td>{requiredAttendance}회</td>
+                        <td className={deficit > 0 ? 'deficit' : 'satisfied'}>
+                          {deficit > 0 ? `${deficit}회 부족` : '충족'}
+                        </td>
+                        <td>
+                          {isAtRisk ? (
+                            <span className="status-badge danger">위험</span>
+                          ) : (
+                            <span className="status-badge safe">안전</span>
+                          )}
+                        </td>
+                        <td>
+                          <div className="member-actions">
+                            {isAtRisk && (
+                              <>
+                                <button
+                                  className="btn btn-warning btn-sm"
+                                  onClick={() => handleWarning(member.id)}
+                                >
+                                  경고
+                                </button>
+                                <button
+                                  className="btn btn-danger btn-sm"
+                                  onClick={() => handleRemove(member.id)}
+                                >
+                                  강퇴
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
                   )}
-                </div>
-              </div>
-
-              <div className="col-attendance">
-                <div className="attendance-fraction">
-                  {stat.attendedEvents} / {stat.totalEvents}
-                </div>
-                <div className="attendance-events">
-                  {stat.totalEvents > 0
-                    ? `${stat.totalEvents}개 이벤트 중`
-                    : '이벤트 없음'}
-                </div>
-              </div>
-
-              <div className="col-rate">
-                <div className="attendance-rate">
-                  {getAttendanceIcon(stat.attendanceRate)}
-                  <span className={getAttendanceColor(stat.attendanceRate)}>
-                    {stat.attendanceRate.toFixed(1)}%
-                  </span>
-                </div>
-              </div>
-
-              <div className="col-last">
-                {stat.lastAttendance ? (
-                  <div className="last-attendance">
-                    <Calendar size={14} />
-                    {format(stat.lastAttendance, 'MM/dd')}
-                  </div>
-                ) : (
-                  <span className="no-attendance">참여 없음</span>
-                )}
-              </div>
-
-              <div className="col-actions">
-                {stat.isAtRisk && (
-                  <div className="action-buttons">
-                    <button
-                      className="btn btn-warning btn-sm"
-                      onClick={() => handleWarnMember(stat.participant.id)}
-                    >
-                      경고
-                    </button>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleRemoveMember(stat.participant.id)}
-                    >
-                      제거
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* 경고 다이얼로그 */}
-      {showWarningDialog && selectedMember && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h3>멤버 경고</h3>
-              <button
-                className="modal-close"
-                onClick={() => setShowWarningDialog(false)}
-              >
-                ×
-              </button>
-            </div>
-            <div className="modal-body">
-              <p>선택한 멤버에게 참여 부족에 대한 경고를 보내시겠습니까?</p>
-              <p className="warning-text">
-                이 작업은 멤버의 경고 횟수를 증가시키며,
-                {rules.autoRemoveAfterWarnings}회 경고 시 자동으로 조직에서
-                제거됩니다.
-              </p>
-            </div>
-            <div className="modal-actions">
-              <button
-                className="btn btn-secondary"
-                onClick={() => setShowWarningDialog(false)}
-              >
-                취소
-              </button>
-              <button
-                className="btn btn-warning"
-                onClick={() => {
-                  // 실제로는 API 호출을 통해 경고 처리
-                  console.log('경고 처리:', selectedMember);
-                  setShowWarningDialog(false);
-                  setSelectedMember(null);
-                }}
-              >
-                경고 보내기
-              </button>
-            </div>
+      {/* 위험 구성원 별도 표시 */}
+      {riskMemberCount > 0 && (
+        <div className="risk-members-section">
+          <h3>⚠️ 주의 필요 구성원 ({riskMemberCount}명)</h3>
+          <div className="risk-members-list">
+            {memberStats
+              .filter((stat) => stat.isAtRisk)
+              .map(
+                ({ member, attendedEvents, requiredAttendance, deficit }) => (
+                  <div key={member.id} className="risk-member-card">
+                    <div className="member-info">
+                      <h4>{member.name}</h4>
+                      <p>
+                        {member.gender === 'male' ? '남성' : '여성'},{' '}
+                        {new Date().getFullYear() - member.birthYear + 1}세
+                      </p>
+                      <p>거주지: {member.district}</p>
+                    </div>
+                    <div className="risk-details">
+                      <p className="attendance-info">
+                        참여: {attendedEvents}회 / 필요: {requiredAttendance}회
+                      </p>
+                      <p className="deficit-info">{deficit}회 부족</p>
+                    </div>
+                    <div className="risk-actions">
+                      <button
+                        className="btn btn-warning"
+                        onClick={() => handleWarning(member.id)}
+                      >
+                        경고 발송
+                      </button>
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => handleRemove(member.id)}
+                      >
+                        강퇴 처리
+                      </button>
+                    </div>
+                  </div>
+                )
+              )}
           </div>
         </div>
       )}

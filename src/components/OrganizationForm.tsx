@@ -1,7 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { useApp } from '../context/AppContext';
-import { Organization } from '../types';
-import { X, Save, Building, MapPin, Users, FileText } from 'lucide-react';
+import { useAppStore } from '../store/useAppStore';
+import { Organization, Member } from '../types';
+import {
+  Modal,
+  Form,
+  Input,
+  Select,
+  Button,
+  message,
+  Typography,
+  Card,
+  Space,
+  Table,
+  Popconfirm,
+  InputNumber,
+  DatePicker,
+} from 'antd';
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  UserOutlined,
+  TeamOutlined,
+  SettingOutlined,
+  SaveOutlined,
+  CloseOutlined,
+} from '@ant-design/icons';
+import dayjs from 'dayjs';
+
+const { TextArea } = Input;
+const { Title, Text } = Typography;
+const { Option } = Select;
 
 interface OrganizationFormProps {
   organization?: Organization;
@@ -9,341 +38,547 @@ interface OrganizationFormProps {
   onCancel: () => void;
 }
 
+interface EditableMember extends Member {
+  isEditing?: boolean;
+  isNew?: boolean;
+}
+
 export function OrganizationForm({
   organization,
   onSubmit,
   onCancel,
 }: OrganizationFormProps) {
-  const { state } = useApp();
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    location: '',
-    type: 'club' as Organization['type'],
-    maxMembers: 50,
-    settings: {
-      allowPublicJoin: false,
-      requireApproval: true,
-      minAttendanceRate: 60,
-    },
-  });
+  const {
+    members: storeMembers,
+    addMember,
+    updateMember,
+    deleteMember,
+  } = useAppStore();
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const [editingKey, setEditingKey] = useState<string>('');
+  const [dataSource, setDataSource] = useState<EditableMember[]>([]);
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // 현재 조직의 구성원 목록
+  const currentMembers = organization
+    ? storeMembers.filter((m) => m.organizationId === organization.id)
+    : [];
 
   useEffect(() => {
     if (organization) {
-      setFormData({
+      form.setFieldsValue({
         name: organization.name,
         description: organization.description,
-        location: organization.location || '',
+        location: organization.location,
         type: organization.type,
-        maxMembers: organization.maxMembers || 50,
+        maxMembers: organization.maxMembers,
         settings: {
-          allowPublicJoin: organization.settings?.allowPublicJoin || false,
-          requireApproval: organization.settings?.requireApproval || true,
-          minAttendanceRate: organization.settings?.minAttendanceRate || 60,
+          participationRule:
+            organization.settings?.participationRule || '제한없음',
         },
       });
+
+      // 가입일 기준 내림차순 정렬
+      const sortedMembers = [...currentMembers].sort(
+        (a, b) => dayjs(b.joinedAt).valueOf() - dayjs(a.joinedAt).valueOf()
+      );
+      setDataSource(sortedMembers);
+    } else {
+      form.setFieldsValue({
+        type: 'club',
+        maxMembers: 50,
+        settings: {
+          participationRule: '제한없음',
+        },
+      });
+      setDataSource([]);
     }
-  }, [organization]);
+  }, [organization, form, currentMembers]);
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = '조직명을 입력해주세요.';
-    } else if (formData.name.length < 2) {
-      newErrors.name = '조직명은 2자 이상이어야 합니다.';
-    } else if (formData.name.length > 50) {
-      newErrors.name = '조직명은 50자 이하여야 합니다.';
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = '조직 설명을 입력해주세요.';
-    } else if (formData.description.length < 10) {
-      newErrors.description = '조직 설명은 10자 이상이어야 합니다.';
-    } else if (formData.description.length > 500) {
-      newErrors.description = '조직 설명은 500자 이하여야 합니다.';
-    }
-
-    if (formData.location && formData.location.length > 100) {
-      newErrors.location = '위치는 100자 이하여야 합니다.';
-    }
-
-    if (formData.maxMembers < 5) {
-      newErrors.maxMembers = '최대 멤버 수는 5명 이상이어야 합니다.';
-    } else if (formData.maxMembers > 1000) {
-      newErrors.maxMembers = '최대 멤버 수는 1000명 이하여야 합니다.';
-    }
-
-    if (formData.settings.minAttendanceRate < 0) {
-      newErrors.minAttendanceRate = '최소 참여율은 0% 이상이어야 합니다.';
-    } else if (formData.settings.minAttendanceRate > 100) {
-      newErrors.minAttendanceRate = '최소 참여율은 100% 이하여야 합니다.';
-    }
-
-    // 중복 이름 체크 (수정 시에는 자기 자신 제외)
-    const existingOrg = state.organizations.find(
-      (org) =>
-        org.name.toLowerCase() === formData.name.toLowerCase() &&
-        org.id !== organization?.id
-    );
-    if (existingOrg) {
-      newErrors.name = '이미 존재하는 조직명입니다.';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-
+  const handleSubmit = async (values: any) => {
+    setLoading(true);
     try {
-      await onSubmit(formData);
+      const orgData: Partial<Organization> = {
+        ...values,
+        settings: {
+          participationRule: values.settings?.participationRule || '제한없음',
+        },
+      };
+
+      await onSubmit(orgData);
+      message.success(
+        organization ? '조직이 수정되었습니다.' : '조직이 생성되었습니다.'
+      );
     } catch (error) {
-      console.error('조직 저장 중 오류:', error);
-      setErrors({ submit: '조직 저장 중 오류가 발생했습니다.' });
+      console.error('Organization submission error:', error);
+      message.error('조직 저장 중 오류가 발생했습니다.');
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
-  const handleChange = (field: string, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  const handleCancel = () => {
+    form.resetFields();
+    setDataSource([]);
+    onCancel();
+  };
 
-    // 해당 필드의 에러 제거
-    if (errors[field]) {
-      setErrors((prev) => ({
-        ...prev,
-        [field]: '',
-      }));
+  const isEditing = (record: EditableMember) => record.id === editingKey;
+
+  const edit = (record: EditableMember) => {
+    setEditingKey(record.id);
+  };
+
+  const cancel = () => {
+    setEditingKey('');
+    // 새로운 행이면 제거
+    setDataSource((prev) =>
+      prev.filter((item) => !item.isNew || item.id !== editingKey)
+    );
+  };
+
+  const save = async (id: string) => {
+    try {
+      const row = dataSource.find((item) => item.id === id);
+      if (!row) return;
+
+      const { isEditing, isNew, ...memberData } = row;
+
+      if (
+        !memberData.name ||
+        !memberData.gender ||
+        !memberData.birthYear ||
+        !memberData.district
+      ) {
+        message.error('모든 필수 필드를 입력해주세요.');
+        return;
+      }
+
+      if (isNew) {
+        const newMember: Member = {
+          ...memberData,
+          organizationId: organization?.id || 'temp',
+          status: 'active',
+          joinedAt: memberData.joinedAt || new Date(),
+          updatedAt: new Date(),
+        };
+
+        if (organization) {
+          addMember(newMember);
+        }
+
+        setDataSource((prev) =>
+          prev.map((item) => (item.id === id ? { ...newMember } : item))
+        );
+      } else {
+        const updatedMember: Member = {
+          ...memberData,
+          updatedAt: new Date(),
+        };
+
+        if (organization) {
+          updateMember(updatedMember);
+        }
+
+        setDataSource((prev) =>
+          prev.map((item) => (item.id === id ? updatedMember : item))
+        );
+      }
+
+      setEditingKey('');
+      message.success(
+        isNew ? '구성원이 추가되었습니다.' : '구성원이 수정되었습니다.'
+      );
+    } catch (error) {
+      console.error('Save error:', error);
+      message.error('저장 중 오류가 발생했습니다.');
     }
   };
 
-  const handleSettingChange = (field: string, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      settings: {
-        ...prev.settings,
-        [field]: value,
+  const handleDelete = (id: string) => {
+    if (organization) {
+      deleteMember(id);
+    }
+    setDataSource((prev) => prev.filter((item) => item.id !== id));
+    message.success('구성원이 삭제되었습니다.');
+  };
+
+  const handleAdd = () => {
+    const newMember: EditableMember = {
+      id: `new_${Date.now()}`,
+      name: '',
+      gender: 'male',
+      birthYear: new Date().getFullYear() - 25,
+      district: '',
+      organizationId: organization?.id || 'temp',
+      status: 'active',
+      joinedAt: new Date(),
+      updatedAt: new Date(),
+      isEditing: true,
+      isNew: true,
+    };
+
+    setDataSource((prev) => [newMember, ...prev]);
+    setEditingKey(newMember.id);
+  };
+
+  const handleCellChange = (id: string, field: string, value: any) => {
+    setDataSource((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const EditableCell = ({
+    editing,
+    dataIndex,
+    title,
+    record,
+    children,
+    ...restProps
+  }: any) => {
+    let inputNode;
+
+    switch (dataIndex) {
+      case 'joinedAt':
+        inputNode = (
+          <DatePicker
+            value={record?.[dataIndex] ? dayjs(record[dataIndex]) : dayjs()}
+            onChange={(date) =>
+              handleCellChange(record?.id, dataIndex, date?.toDate())
+            }
+            format="YYYY.MM.DD"
+            style={{ width: '100%' }}
+          />
+        );
+        break;
+      case 'gender':
+        inputNode = (
+          <Select
+            value={record?.[dataIndex]}
+            onChange={(value) => handleCellChange(record?.id, dataIndex, value)}
+            style={{ width: '100%' }}
+          >
+            <Option value="male">남성</Option>
+            <Option value="female">여성</Option>
+          </Select>
+        );
+        break;
+      case 'birthYear':
+        inputNode = (
+          <InputNumber
+            min={1950}
+            max={new Date().getFullYear()}
+            value={record?.[dataIndex]}
+            onChange={(value) => handleCellChange(record?.id, dataIndex, value)}
+            style={{ width: '100%' }}
+          />
+        );
+        break;
+      default:
+        inputNode = (
+          <Input
+            value={record?.[dataIndex]}
+            onChange={(e) =>
+              handleCellChange(record?.id, dataIndex, e.target.value)
+            }
+          />
+        );
+    }
+
+    return <td {...restProps}>{editing ? inputNode : children}</td>;
+  };
+
+  const columns = [
+    {
+      title: '가입일',
+      dataIndex: 'joinedAt',
+      key: 'joinedAt',
+      width: 120,
+      editable: true,
+      render: (date: Date) => dayjs(date).format('YYYY.MM.DD'),
+      sorter: (a: Member, b: Member) =>
+        dayjs(b.joinedAt).valueOf() - dayjs(a.joinedAt).valueOf(),
+      defaultSortOrder: 'descend' as const,
+    },
+    {
+      title: '이름',
+      dataIndex: 'name',
+      key: 'name',
+      width: 100,
+      editable: true,
+      render: (text: string) => <Text strong>{text}</Text>,
+    },
+    {
+      title: '성별',
+      dataIndex: 'gender',
+      key: 'gender',
+      width: 80,
+      editable: true,
+      render: (gender: 'male' | 'female') => (
+        <span>{gender === 'male' ? '남성' : '여성'}</span>
+      ),
+    },
+    {
+      title: '나이(년생)',
+      dataIndex: 'birthYear',
+      key: 'birthYear',
+      width: 100,
+      editable: true,
+      render: (birthYear: number) => (
+        <span>
+          {birthYear}년생 ({new Date().getFullYear() - birthYear + 1}세)
+        </span>
+      ),
+    },
+    {
+      title: '거주지',
+      dataIndex: 'district',
+      key: 'district',
+      width: 120,
+      editable: true,
+    },
+    {
+      title: '작업',
+      key: 'actions',
+      width: 120,
+      render: (_: any, record: EditableMember) => {
+        const editable = isEditing(record);
+        return editable ? (
+          <Space>
+            <Button
+              icon={<SaveOutlined />}
+              type="link"
+              size="small"
+              onClick={() => save(record.id)}
+            />
+            <Button
+              icon={<CloseOutlined />}
+              type="link"
+              size="small"
+              onClick={cancel}
+            />
+          </Space>
+        ) : (
+          <Space>
+            <Button
+              type="link"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => edit(record)}
+              disabled={editingKey !== ''}
+            />
+            <Popconfirm
+              title="구성원을 삭제하시겠습니까?"
+              onConfirm={() => handleDelete(record.id)}
+              okText="삭제"
+              cancelText="취소"
+            >
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                disabled={editingKey !== ''}
+              />
+            </Popconfirm>
+          </Space>
+        );
       },
-    }));
-  };
+    },
+  ];
+
+  const mergedColumns = columns.map((col) => {
+    if (!col.editable) {
+      return col;
+    }
+    return {
+      ...col,
+      onCell: (record: EditableMember) => ({
+        record,
+        dataIndex: col.dataIndex,
+        title: col.title,
+        editing: isEditing(record),
+      }),
+    };
+  });
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content organization-form-modal">
-        <div className="modal-header">
-          <h2>
-            <Building size={24} />
-            {organization ? '조직 수정' : '새 조직 생성'}
-          </h2>
-          <button className="modal-close" onClick={onCancel}>
-            <X size={24} />
-          </button>
+    <Modal
+      title={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <TeamOutlined />
+          <span>{organization ? '조직 수정' : '새 조직 생성'}</span>
         </div>
+      }
+      open={true}
+      onCancel={handleCancel}
+      footer={null}
+      width={1000}
+      destroyOnClose
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSubmit}
+        requiredMark={true}
+        style={{ marginTop: 24 }}
+      >
+        <Card title="기본 정보" style={{ marginBottom: 24 }}>
+          <Form.Item
+            name="name"
+            label="조직명"
+            rules={[
+              { required: true, message: '조직명을 입력해주세요.' },
+              { min: 2, message: '조직명은 2자 이상이어야 합니다.' },
+              { max: 50, message: '조직명은 50자 이하여야 합니다.' },
+            ]}
+          >
+            <Input
+              placeholder="예: 독서모임, 등산동호회, 스터디그룹"
+              size="large"
+            />
+          </Form.Item>
 
-        <form onSubmit={handleSubmit} className="organization-form">
-          <div className="form-section">
-            <h3>기본 정보</h3>
+          <Form.Item
+            name="description"
+            label="조직 설명"
+            rules={[{ max: 500, message: '설명은 500자 이하여야 합니다.' }]}
+          >
+            <TextArea
+              rows={3}
+              placeholder="조직의 목적과 활동 내용을 간단히 설명해주세요."
+              maxLength={500}
+              showCount
+            />
+          </Form.Item>
 
-            <div className="form-group">
-              <label htmlFor="name">
-                <Building size={16} />
-                조직명 *
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={formData.name}
-                onChange={(e) => handleChange('name', e.target.value)}
-                placeholder="예: 독서모임, 등산동호회, 스터디그룹"
-                className={errors.name ? 'error' : ''}
-                maxLength={50}
-              />
-              {errors.name && (
-                <span className="error-message">{errors.name}</span>
-              )}
-            </div>
+          <Form.Item
+            name="location"
+            label="주요 활동 지역"
+            rules={[{ max: 100, message: '지역명은 100자 이하여야 합니다.' }]}
+          >
+            <Input placeholder="예: 서울 강남구, 부산 해운대구" size="large" />
+          </Form.Item>
 
-            <div className="form-group">
-              <label htmlFor="description">
-                <FileText size={16} />
-                조직 설명 *
-              </label>
-              <textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => handleChange('description', e.target.value)}
-                placeholder="조직의 목적, 활동 내용, 특징 등을 상세히 설명해주세요."
-                className={errors.description ? 'error' : ''}
-                rows={4}
-                maxLength={500}
-              />
-              <small>{formData.description.length}/500자</small>
-              {errors.description && (
-                <span className="error-message">{errors.description}</span>
-              )}
-            </div>
+          <Form.Item
+            name="type"
+            label="조직 유형"
+            rules={[{ required: true, message: '조직 유형을 선택해주세요.' }]}
+          >
+            <Select placeholder="조직 유형 선택" size="large">
+              <Option value="club">동호회</Option>
+              <Option value="study">스터디</Option>
+              <Option value="sports">스포츠</Option>
+              <Option value="volunteer">봉사활동</Option>
+              <Option value="business">비즈니스</Option>
+              <Option value="social">사교모임</Option>
+              <Option value="other">기타</Option>
+            </Select>
+          </Form.Item>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="type">
-                  <Users size={16} />
-                  조직 유형
-                </label>
-                <select
-                  id="type"
-                  value={formData.type}
-                  onChange={(e) =>
-                    handleChange('type', e.target.value as Organization['type'])
-                  }
-                >
-                  <option value="club">동호회</option>
-                  <option value="study">스터디</option>
-                  <option value="sports">스포츠</option>
-                  <option value="volunteer">봉사</option>
-                  <option value="business">비즈니스</option>
-                  <option value="social">친목</option>
-                  <option value="other">기타</option>
-                </select>
-              </div>
+          <Form.Item
+            name="maxMembers"
+            label="최대 구성원 수"
+            rules={[
+              { required: true, message: '최대 구성원 수를 입력해주세요.' },
+            ]}
+          >
+            <InputNumber
+              min={1}
+              max={1000}
+              placeholder="최대 구성원 수"
+              style={{ width: '100%' }}
+              size="large"
+            />
+          </Form.Item>
+        </Card>
 
-              <div className="form-group">
-                <label htmlFor="maxMembers">
-                  <Users size={16} />
-                  최대 멤버 수
-                </label>
-                <input
-                  id="maxMembers"
-                  type="number"
-                  value={formData.maxMembers}
-                  onChange={(e) =>
-                    handleChange('maxMembers', parseInt(e.target.value) || 0)
-                  }
-                  min="5"
-                  max="1000"
-                  className={errors.maxMembers ? 'error' : ''}
-                />
-                {errors.maxMembers && (
-                  <span className="error-message">{errors.maxMembers}</span>
-                )}
-              </div>
-            </div>
+        <Card
+          title={
+            <>
+              <SettingOutlined /> 운영 설정
+            </>
+          }
+          style={{ marginBottom: 24 }}
+        >
+          <Form.Item
+            name={['settings', 'participationRule']}
+            label="참여 규칙 (월 최소 참여 횟수)"
+            rules={[{ required: true, message: '참여 규칙을 선택해주세요.' }]}
+          >
+            <Select placeholder="참여 규칙 선택" size="large">
+              <Option value="제한없음">제한없음</Option>
+              <Option value="1">월 1회 이상</Option>
+              <Option value="2">월 2회 이상</Option>
+              <Option value="3">월 3회 이상</Option>
+              <Option value="4">월 4회 이상</Option>
+              <Option value="5">월 5회 이상</Option>
+              <Option value="6">월 6회 이상</Option>
+              <Option value="7">월 7회 이상</Option>
+              <Option value="8">월 8회 이상</Option>
+              <Option value="9">월 9회 이상</Option>
+              <Option value="10">월 10회 이상</Option>
+            </Select>
+          </Form.Item>
+        </Card>
 
-            <div className="form-group">
-              <label htmlFor="location">
-                <MapPin size={16} />
-                주요 활동 지역
-              </label>
-              <input
-                id="location"
-                type="text"
-                value={formData.location}
-                onChange={(e) => handleChange('location', e.target.value)}
-                placeholder="예: 서울 강남구, 부산 해운대구"
-                className={errors.location ? 'error' : ''}
-                maxLength={100}
-              />
-              {errors.location && (
-                <span className="error-message">{errors.location}</span>
-              )}
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h3>운영 설정</h3>
-
-            <div className="form-group">
-              <label htmlFor="minAttendanceRate">최소 참여율 (%)</label>
-              <input
-                id="minAttendanceRate"
-                type="number"
-                value={formData.settings.minAttendanceRate}
-                onChange={(e) =>
-                  handleSettingChange(
-                    'minAttendanceRate',
-                    parseInt(e.target.value) || 0
-                  )
-                }
-                min="0"
-                max="100"
-                className={errors.minAttendanceRate ? 'error' : ''}
-              />
-              <small>이 참여율 미만 시 경고 대상이 됩니다.</small>
-              {errors.minAttendanceRate && (
-                <span className="error-message">
-                  {errors.minAttendanceRate}
-                </span>
-              )}
-            </div>
-
-            <div className="form-group">
-              <div className="checkbox-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={formData.settings.allowPublicJoin}
-                    onChange={(e) =>
-                      handleSettingChange('allowPublicJoin', e.target.checked)
-                    }
-                  />
-                  <span className="checkbox-text">
-                    <strong>공개 가입 허용</strong>
-                    <small>누구나 자유롭게 가입할 수 있습니다.</small>
-                  </span>
-                </label>
-
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={formData.settings.requireApproval}
-                    onChange={(e) =>
-                      handleSettingChange('requireApproval', e.target.checked)
-                    }
-                  />
-                  <span className="checkbox-text">
-                    <strong>가입 승인 필요</strong>
-                    <small>관리자가 가입 요청을 승인해야 합니다.</small>
-                  </span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          {errors.submit && <div className="submit-error">{errors.submit}</div>}
-
-          <div className="form-actions">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={onCancel}
-              disabled={isSubmitting}
+        <Card
+          title={
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
             >
+              <span>
+                <UserOutlined /> 구성원 관리 ({dataSource.length}명)
+              </span>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleAdd}
+                size="small"
+                disabled={editingKey !== ''}
+              >
+                구성원 추가
+              </Button>
+            </div>
+          }
+          style={{ marginBottom: 24 }}
+        >
+          <Table
+            components={{
+              body: {
+                cell: EditableCell,
+              },
+            }}
+            dataSource={dataSource}
+            columns={mergedColumns}
+            rowKey="id"
+            pagination={false}
+            size="small"
+            locale={{ emptyText: '구성원이 없습니다.' }}
+            scroll={{ x: 'max-content' }}
+          />
+        </Card>
+
+        <Form.Item style={{ marginBottom: 0, marginTop: 32 }}>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+            <Button size="large" onClick={handleCancel}>
               취소
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={isSubmitting}
+            </Button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              size="large"
             >
-              <Save size={16} />
-              {isSubmitting ? '저장 중...' : organization ? '수정' : '생성'}
-            </button>
+              {organization ? '수정' : '생성'}
+            </Button>
           </div>
-        </form>
-      </div>
-    </div>
+        </Form.Item>
+      </Form>
+    </Modal>
   );
 }

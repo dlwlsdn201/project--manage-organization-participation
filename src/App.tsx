@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AppProvider, useApp } from './context/AppContext';
+import { useAppStore } from './store/useAppStore';
 import { OrganizationList } from './components/OrganizationList';
 import { EventManager } from './components/EventManager';
 import { AttendanceTracker } from './components/AttendanceTracker';
@@ -9,8 +9,20 @@ import './App.css';
 
 type TabType = 'organizations' | 'events' | 'analytics';
 
-function AppContent() {
-  const { state, dispatch } = useApp();
+function App() {
+  const {
+    user,
+    selectedOrganization,
+    events,
+    setUser,
+    setUsers,
+    setOrganizations,
+    setParticipants,
+    setMembers,
+    setEvents,
+    setActivityLogs,
+    selectOrganization,
+  } = useAppStore();
 
   const [activeTab, setActiveTab] = useState<TabType>('organizations');
 
@@ -18,16 +30,25 @@ function AppContent() {
   useEffect(() => {
     const initialData = loadInitialData();
 
-    dispatch({ type: 'SET_USER', payload: initialData.user });
-    dispatch({ type: 'SET_USERS', payload: initialData.users });
-    dispatch({ type: 'SET_ORGANIZATIONS', payload: initialData.organizations });
-    dispatch({ type: 'SET_PARTICIPANTS', payload: initialData.participants });
-    dispatch({ type: 'SET_EVENTS', payload: initialData.events });
-    dispatch({ type: 'SET_ACTIVITY_LOGS', payload: initialData.activityLogs });
-  }, [dispatch]);
+    setUser(initialData.user);
+    setUsers(initialData.users);
+    setOrganizations(initialData.organizations);
+    setParticipants(initialData.participants);
+    setMembers(initialData.members);
+    setEvents(initialData.events);
+    setActivityLogs(initialData.activityLogs);
+  }, [
+    setUser,
+    setUsers,
+    setOrganizations,
+    setParticipants,
+    setMembers,
+    setEvents,
+    setActivityLogs,
+  ]);
 
   const handleEditOrganization = (organization: Organization) => {
-    dispatch({ type: 'SELECT_ORGANIZATION', payload: organization });
+    selectOrganization(organization);
     setActiveTab('events');
   };
 
@@ -37,26 +58,24 @@ function AppContent() {
         return <OrganizationList onEditOrganization={handleEditOrganization} />;
 
       case 'events':
-        if (!state.selectedOrganization) {
+        if (!selectedOrganization) {
           return (
             <div className="empty-state">
               <p>모임을 관리하려면 먼저 조직을 선택해주세요.</p>
             </div>
           );
         }
-        return <EventManager organizationId={state.selectedOrganization.id} />;
+        return <EventManager organizationId={selectedOrganization.id} />;
 
       case 'analytics':
-        if (!state.selectedOrganization) {
+        if (!selectedOrganization) {
           return (
             <div className="empty-state">
               <p>분석을 보려면 먼저 조직을 선택해주세요.</p>
             </div>
           );
         }
-        return (
-          <AttendanceTracker organizationId={state.selectedOrganization.id} />
-        );
+        return <AttendanceTracker organizationId={selectedOrganization.id} />;
 
       default:
         return null;
@@ -67,9 +86,14 @@ function AppContent() {
     <div className="app">
       <header className="app-header">
         <h1>조직 참여 관리 시스템</h1>
-        {state.user && (
-          <div className="user-info">안녕하세요, {state.user.name}님!</div>
-        )}
+        <div className="header-info">
+          {user && <div className="user-info">안녕하세요, {user.name}님!</div>}
+          {selectedOrganization && (
+            <div className="selected-organization">
+              현재 선택된 조직: <strong>{selectedOrganization.name}</strong>
+            </div>
+          )}
+        </div>
       </header>
 
       <main className="app-main">
@@ -86,11 +110,11 @@ function AppContent() {
             onClick={() => setActiveTab('events')}
           >
             모임 관리
-            {state.selectedOrganization && (
+            {selectedOrganization && (
               <span className="tab-badge">
                 {
-                  state.events.filter(
-                    (e) => e.organizationId === state.selectedOrganization?.id
+                  events.filter(
+                    (e) => e.organizationId === selectedOrganization?.id
                   ).length
                 }
               </span>
@@ -104,17 +128,25 @@ function AppContent() {
           </button>
         </nav>
 
+        {selectedOrganization && (
+          <div className="organization-breadcrumb">
+            <span>현재 관리 중인 조직:</span>
+            <strong>{selectedOrganization.name}</strong>
+            <button
+              className="btn btn-outline btn-sm"
+              onClick={() => {
+                selectOrganization(null);
+                setActiveTab('organizations');
+              }}
+            >
+              조직 선택 해제
+            </button>
+          </div>
+        )}
+
         <div className="tab-content">{renderTabContent()}</div>
       </main>
     </div>
-  );
-}
-
-function App() {
-  return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
   );
 }
 

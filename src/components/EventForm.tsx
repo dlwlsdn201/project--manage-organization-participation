@@ -1,365 +1,305 @@
 import React, { useState, useEffect } from 'react';
-import { Event, Organization, Participant } from '../types';
-import { useApp } from '../context/AppContext';
-import { DateRangeFilter } from './DateRangeFilter';
-import { X, Calendar, MapPin, Users, Clock } from 'lucide-react';
-import { format } from 'date-fns';
+import { useAppStore } from '../store/useAppStore';
+import { Event, Member } from '../types';
+import {
+  Modal,
+  Form,
+  Input,
+  DatePicker,
+  Select,
+  Button,
+  message,
+  Typography,
+} from 'antd';
+import {
+  CalendarOutlined,
+  EnvironmentOutlined,
+  UserOutlined,
+  TeamOutlined,
+} from '@ant-design/icons';
+import dayjs from 'dayjs';
+
+const { TextArea } = Input;
+const { Title } = Typography;
 
 interface EventFormProps {
   event?: Event;
-  onSubmit: (eventData: Partial<Event>) => void;
+  organizationId: string;
+  onSubmit: (data: Partial<Event>) => void;
   onCancel: () => void;
-  organizations: Organization[];
 }
 
 export function EventForm({
   event,
+  organizationId,
   onSubmit,
   onCancel,
-  organizations,
 }: EventFormProps) {
-  const { state } = useApp();
-  const [formData, setFormData] = useState({
-    title: event?.title || '',
-    description: event?.description || '',
-    organizationId: event?.organizationId || '',
-    startDate: event?.startDate ? format(event.startDate, 'yyyy-MM-dd') : '',
-    startTime: event?.startDate ? format(event.startDate, 'HH:mm') : '',
-    endDate: event?.endDate ? format(event.endDate, 'yyyy-MM-dd') : '',
-    endTime: event?.endDate ? format(event.endDate, 'HH:mm') : '',
-    location: event?.location || '',
-    maxParticipants: event?.maxParticipants || 50,
-    attendees: event?.attendees || [],
-  });
+  const { members } = useAppStore();
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
 
-  const [availableParticipants, setAvailableParticipants] = useState<
-    Participant[]
-  >([]);
-  const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
-    event?.attendees || []
+  // 현재 조직의 구성원 목록
+  const organizationMembers = members.filter(
+    (member) =>
+      member.organizationId === organizationId && member.status === 'active'
   );
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (formData.organizationId) {
-      const orgParticipants = state.participants.filter(
-        (p) =>
-          p.organizationId === formData.organizationId && p.status === 'active'
-      );
-      setAvailableParticipants(orgParticipants);
+    if (event) {
+      form.setFieldsValue({
+        title: event.title,
+        description: event.description,
+        date: dayjs(event.date),
+        location: event.location,
+        hostId: event.hostId,
+        attendees: event.attendees,
+        maxParticipants: event.maxParticipants,
+      });
     } else {
-      setAvailableParticipants([]);
+      // 새 이벤트 생성 시 기본값 설정
+      form.setFieldsValue({
+        date: dayjs(),
+        attendees: [],
+      });
     }
-  }, [formData.organizationId, state.participants]);
+  }, [event, form]);
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
+  const handleSubmit = async (values: any) => {
+    setLoading(true);
+    try {
+      const eventData: Partial<Event> = {
+        ...values,
+        organizationId,
+        date: values.date.toDate(),
+        currentParticipants: values.attendees?.length || 0,
+        status: 'published' as const,
+      };
 
-    if (!formData.title.trim()) {
-      newErrors.title = '이벤트 제목을 입력해주세요.';
-    }
-
-    if (!formData.organizationId) {
-      newErrors.organizationId = '조직을 선택해주세요.';
-    }
-
-    if (!formData.startDate) {
-      newErrors.startDate = '시작일을 선택해주세요.';
-    }
-
-    if (!formData.startTime) {
-      newErrors.startTime = '시작 시간을 선택해주세요.';
-    }
-
-    if (!formData.endDate) {
-      newErrors.endDate = '종료일을 선택해주세요.';
-    }
-
-    if (!formData.endTime) {
-      newErrors.endTime = '종료 시간을 선택해주세요.';
-    }
-
-    if (
-      formData.startDate &&
-      formData.endDate &&
-      formData.startTime &&
-      formData.endTime
-    ) {
-      const startDateTime = new Date(
-        `${formData.startDate}T${formData.startTime}`
+      await onSubmit(eventData);
+      message.success(
+        event ? '모임이 수정되었습니다.' : '모임이 생성되었습니다.'
       );
-      const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
-
-      if (endDateTime <= startDateTime) {
-        newErrors.endDate = '종료 시간은 시작 시간보다 늦어야 합니다.';
-      }
+    } catch (error) {
+      console.error('Event submission error:', error);
+      message.error('모임 저장 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
     }
-
-    if (selectedParticipants.length === 0) {
-      newErrors.attendees = '최소 1명의 참여자를 선택해주세요.';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCancel = () => {
+    form.resetFields();
+    onCancel();
+  };
 
-    if (!validateForm()) {
-      return;
-    }
-
-    const startDateTime = new Date(
-      `${formData.startDate}T${formData.startTime}`
+  if (!organizationId) {
+    return (
+      <Modal
+        title="오류"
+        open={true}
+        onCancel={onCancel}
+        footer={[
+          <Button key="ok" type="primary" onClick={onCancel}>
+            확인
+          </Button>,
+        ]}
+      >
+        조직을 먼저 선택해주세요.
+      </Modal>
     );
-    const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
-
-    const eventData: Partial<Event> = {
-      title: formData.title,
-      description: formData.description,
-      organizationId: formData.organizationId,
-      startDate: startDateTime,
-      endDate: endDateTime,
-      location: formData.location,
-      maxParticipants: formData.maxParticipants,
-      attendees: selectedParticipants,
-      currentParticipants: selectedParticipants.length,
-      status: 'completed', // 오프라인 모임은 완료된 이벤트로 입력
-    };
-
-    onSubmit(eventData);
-  };
-
-  const handleParticipantToggle = (participantId: string) => {
-    setSelectedParticipants((prev) =>
-      prev.includes(participantId)
-        ? prev.filter((id) => id !== participantId)
-        : [...prev, participantId]
-    );
-  };
-
-  const handleSelectAll = () => {
-    setSelectedParticipants(availableParticipants.map((p) => p.id));
-  };
-
-  const handleDeselectAll = () => {
-    setSelectedParticipants([]);
-  };
-
-  const getParticipantName = (participantId: string) => {
-    const participant = state.participants.find((p) => p.id === participantId);
-    return participant ? participant.name : '알 수 없음';
-  };
+  }
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h2>{event ? '모임 수정' : '오프라인 모임 기록'}</h2>
-          <button className="modal-close" onClick={onCancel}>
-            <X size={20} />
-          </button>
+    <Modal
+      title={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <CalendarOutlined />
+          <span>{event ? '모임 수정' : '새 모임 기록'}</span>
         </div>
+      }
+      open={true}
+      onCancel={handleCancel}
+      footer={null}
+      width={600}
+      destroyOnClose
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSubmit}
+        requiredMark={true}
+        style={{ marginTop: 24 }}
+      >
+        <Form.Item
+          name="title"
+          label={
+            <span>
+              <CalendarOutlined style={{ marginRight: 8 }} />
+              이벤트 제목
+            </span>
+          }
+          rules={[
+            { required: true, message: '이벤트 제목을 입력해주세요.' },
+            { min: 2, message: '제목은 2자 이상이어야 합니다.' },
+            { max: 100, message: '제목은 100자 이하여야 합니다.' },
+          ]}
+        >
+          <Input
+            placeholder="예: 정기 독서모임, 등산 모임, 스터디 세션"
+            size="large"
+          />
+        </Form.Item>
 
-        <form onSubmit={handleSubmit} className="form">
-          <div className="form-group">
-            <label>
-              <Calendar size={16} />
-              이벤트 제목 *
-            </label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
-              placeholder="예: 정기 모임, 워크샵, 네트워킹 등"
-              className={errors.title ? 'error' : ''}
-            />
-            {errors.title && (
-              <span className="error-message">{errors.title}</span>
-            )}
-          </div>
+        <Form.Item
+          name="date"
+          label={
+            <span>
+              <CalendarOutlined style={{ marginRight: 8 }} />
+              날짜
+            </span>
+          }
+          rules={[{ required: true, message: '모임 날짜를 선택해주세요.' }]}
+        >
+          <DatePicker
+            style={{ width: '100%' }}
+            size="large"
+            format="YYYY년 MM월 DD일"
+            placeholder="모임 날짜 선택"
+          />
+        </Form.Item>
 
-          <div className="form-group">
-            <label>
-              <Users size={16} />
-              조직 *
-            </label>
-            <select
-              value={formData.organizationId}
-              onChange={(e) =>
-                setFormData({ ...formData, organizationId: e.target.value })
-              }
-              className={errors.organizationId ? 'error' : ''}
-            >
-              <option value="">조직을 선택하세요</option>
-              {organizations.map((org) => (
-                <option key={org.id} value={org.id}>
-                  {org.name}
-                </option>
-              ))}
-            </select>
-            {errors.organizationId && (
-              <span className="error-message">{errors.organizationId}</span>
-            )}
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label>시작일 *</label>
-              <input
-                type="date"
-                value={formData.startDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, startDate: e.target.value })
-                }
-                className={errors.startDate ? 'error' : ''}
-              />
-              {errors.startDate && (
-                <span className="error-message">{errors.startDate}</span>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label>시작 시간 *</label>
-              <input
-                type="time"
-                value={formData.startTime}
-                onChange={(e) =>
-                  setFormData({ ...formData, startTime: e.target.value })
-                }
-                className={errors.startTime ? 'error' : ''}
-              />
-              {errors.startTime && (
-                <span className="error-message">{errors.startTime}</span>
-              )}
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label>종료일 *</label>
-              <input
-                type="date"
-                value={formData.endDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, endDate: e.target.value })
-                }
-                className={errors.endDate ? 'error' : ''}
-              />
-              {errors.endDate && (
-                <span className="error-message">{errors.endDate}</span>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label>종료 시간 *</label>
-              <input
-                type="time"
-                value={formData.endTime}
-                onChange={(e) =>
-                  setFormData({ ...formData, endTime: e.target.value })
-                }
-                className={errors.endTime ? 'error' : ''}
-              />
-              {errors.endTime && (
-                <span className="error-message">{errors.endTime}</span>
-              )}
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label>
-              <MapPin size={16} />
+        <Form.Item
+          name="location"
+          label={
+            <span>
+              <EnvironmentOutlined style={{ marginRight: 8 }} />
               장소
-            </label>
-            <input
-              type="text"
-              value={formData.location}
-              onChange={(e) =>
-                setFormData({ ...formData, location: e.target.value })
-              }
-              placeholder="모임 장소를 입력하세요"
-            />
-          </div>
+            </span>
+          }
+          rules={[
+            { required: true, message: '모임 장소를 입력해주세요.' },
+            { min: 2, message: '장소는 2자 이상이어야 합니다.' },
+            { max: 200, message: '장소는 200자 이하여야 합니다.' },
+          ]}
+        >
+          <Input
+            placeholder="예: 강남역 스타벅스, 한강공원 잠실대교, 온라인 (Zoom)"
+            size="large"
+          />
+        </Form.Item>
 
-          <div className="form-group">
-            <label>설명</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              placeholder="모임에 대한 설명을 입력하세요"
-              rows={3}
-            />
-          </div>
+        <Form.Item
+          name="hostId"
+          label={
+            <span>
+              <UserOutlined style={{ marginRight: 8 }} />
+              주최자
+            </span>
+          }
+          rules={[{ required: true, message: '주최자를 선택해주세요.' }]}
+        >
+          <Select
+            placeholder="주최자 선택"
+            size="large"
+            showSearch
+            filterOption={(input, option) =>
+              (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+            }
+            options={organizationMembers.map((member) => ({
+              value: member.id,
+              label: `${member.name} (${member.gender === 'male' ? '남' : '여'}, ${new Date().getFullYear() - member.birthYear + 1}세)`,
+            }))}
+          />
+        </Form.Item>
 
-          {formData.organizationId && (
-            <div className="form-section">
-              <div className="participant-selection-header">
-                <h3>참여자 선택 ({selectedParticipants.length}명)</h3>
-                <div className="selection-actions">
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    onClick={handleSelectAll}
-                  >
-                    전체 선택
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    onClick={handleDeselectAll}
-                  >
-                    전체 해제
-                  </button>
-                </div>
-              </div>
+        <Form.Item
+          name="attendees"
+          label={
+            <span>
+              <TeamOutlined style={{ marginRight: 8 }} />
+              참여자 목록
+            </span>
+          }
+          rules={[
+            { required: true, message: '참여자를 선택해주세요.' },
+            {
+              type: 'array',
+              min: 1,
+              message: '최소 1명의 참여자를 선택해야 합니다.',
+            },
+          ]}
+        >
+          <Select
+            mode="multiple"
+            placeholder="참여자 선택 (여러 명 선택 가능)"
+            size="large"
+            showSearch
+            filterOption={(input, option) =>
+              (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+            }
+            options={organizationMembers.map((member) => ({
+              value: member.id,
+              label: `${member.name} (${member.gender === 'male' ? '남' : '여'}, ${new Date().getFullYear() - member.birthYear + 1}세, ${member.district})`,
+            }))}
+            maxTagCount="responsive"
+          />
+        </Form.Item>
 
-              <div className="participant-selection-list">
-                {availableParticipants.map((participant) => (
-                  <label key={participant.id} className="participant-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={selectedParticipants.includes(participant.id)}
-                      onChange={() => handleParticipantToggle(participant.id)}
-                    />
-                    <div className="participant-info">
-                      <span className="participant-name">
-                        {state.users.find((u) => u.id === participant.userId)
-                          ?.name || '알 수 없음'}
-                      </span>
-                      <span className="participant-role">
-                        {participant.role}
-                      </span>
-                    </div>
-                  </label>
-                ))}
-              </div>
+        <Form.Item name="description" label="모임 설명 (선택사항)">
+          <TextArea
+            rows={3}
+            placeholder="모임에 대한 추가 설명이나 특이사항을 입력하세요."
+            maxLength={500}
+            showCount
+          />
+        </Form.Item>
 
-              {errors.attendees && (
-                <span className="error-message">{errors.attendees}</span>
-              )}
-            </div>
-          )}
+        <Form.Item name="maxParticipants" label="최대 참여자 수 (선택사항)">
+          <Input
+            type="number"
+            min={1}
+            max={1000}
+            placeholder="제한이 없으면 비워두세요"
+            size="large"
+          />
+        </Form.Item>
 
-          <div className="form-actions">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={onCancel}
-            >
+        <Form.Item style={{ marginBottom: 0, marginTop: 32 }}>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+            <Button size="large" onClick={handleCancel}>
               취소
-            </button>
-            <button type="submit" className="btn btn-primary">
-              {event ? '수정' : '기록 저장'}
-            </button>
+            </Button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              size="large"
+            >
+              {event ? '수정' : '생성'}
+            </Button>
           </div>
-        </form>
-      </div>
-    </div>
+        </Form.Item>
+      </Form>
+
+      {organizationMembers.length === 0 && (
+        <div
+          style={{
+            marginTop: 16,
+            padding: 16,
+            background: '#fff7e6',
+            border: '1px solid #ffd591',
+            borderRadius: 6,
+          }}
+        >
+          <Title level={5} style={{ margin: 0, color: '#d46b08' }}>
+            구성원이 없습니다
+          </Title>
+          <p style={{ margin: '8px 0 0 0', color: '#ad6800' }}>
+            모임을 생성하려면 먼저 조직에 구성원을 추가해주세요.
+          </p>
+        </div>
+      )}
+    </Modal>
   );
 }
