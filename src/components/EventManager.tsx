@@ -124,7 +124,7 @@ export function EventManager({ organizationId }: EventManagerProps) {
       draft: '임시저장',
       published: '공개',
       ongoing: '진행중',
-      completed: '완료',
+      completed: '종료',
       cancelled: '취소',
     };
     return statusMap[status] || status;
@@ -205,7 +205,7 @@ export function EventManager({ organizationId }: EventManagerProps) {
                   </div>
 
                   <div className="mb-3">
-                    <p className="flex items-center gap-1.5 text-xs text-slate-600 mb-1 font-medium text-slate-900">
+                    <p className="flex items-center gap-1.5 text-xs mb-1 font-medium text-slate-900">
                       📅 {dayjs(event.date).format('YYYY년 MM월 DD일')}
                     </p>
                     <p className="flex items-center gap-1.5 text-xs text-slate-600 mb-1">
@@ -289,10 +289,12 @@ export function EventManager({ organizationId }: EventManagerProps) {
                       {member.name}
                     </h4>
                     <div className="flex gap-1 flex-wrap items-center">
-                      <span className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded text-xs font-medium">
+                      <span
+                        className={`text-blue-50 ${member.gender === 'male' ? 'bg-blue-400' : 'bg-accent-400'} px-1.5 py-0.5 rounded text-xs font-medium`}
+                      >
                         {member.gender === 'male' ? '남' : '여'}
                       </span>
-                      <span className="bg-green-100 text-green-800 px-1.5 py-0.5 rounded text-xs font-medium">
+                      <span className="bg-green-100 text-green-800 min-w-[2.25rem] px-1.5 py-0.5 rounded text-xs font-medium">
                         {new Date().getFullYear() - member.birthYear + 1}세
                       </span>
                       <span className="bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded text-xs font-medium">

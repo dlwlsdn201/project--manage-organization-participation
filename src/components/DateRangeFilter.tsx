@@ -137,11 +137,13 @@ export function DateRangeFilter({
   return (
     <div className={`relative inline-block ${className}`}>
       <div
-        className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-lg cursor-pointer text-sm text-gray-700 transition-all duration-200 hover:border-gray-400 hover:bg-gray-50 min-w-[200px]"
+        className="w-[8.5rem] flex justify-between items-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-lg cursor-pointer text-sm text-gray-700 transition-all duration-200 hover:border-gray-400 hover:bg-gray-50"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <Calendar size={16} />
-        <span>{getDisplayText()}</span>
+        <div className="flex gap-2 justify-start">
+          <Calendar size={16} />
+          <span>{getDisplayText()}</span>
+        </div>
         <ChevronDown
           size={16}
           className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
@@ -149,7 +151,7 @@ export function DateRangeFilter({
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-50 mt-1 p-4">
+        <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-50 mt-1 p-2">
           <div className="flex flex-col gap-1 mb-4">
             {presets.map((preset) => (
               <button
@@ -195,15 +197,15 @@ export function DateRangeFilter({
             </div>
           )}
 
-          <div className="flex gap-2 justify-end">
+          <div className="flex flex-wrap gap-2 justify-end">
             <button
-              className="px-3 py-1.5 text-sm bg-slate-100 text-slate-600 border border-slate-200 rounded hover:bg-slate-200 transition-colors"
+              className="px-3 py-1.5 text-sm w-full bg-slate-100 text-slate-600 border border-slate-200 rounded hover:bg-slate-200 transition-colors"
               onClick={clearFilter}
             >
               초기화
             </button>
             <button
-              className="px-3 py-1.5 text-sm bg-gradient-to-r from-primary to-secondary text-white rounded hover:shadow-lg transition-all duration-200"
+              className="px-3 py-1.5 w-full text-sm bg-gradient-to-r from-primary to-secondary text-white rounded hover:shadow-lg transition-all duration-200"
               onClick={() => setIsOpen(false)}
             >
               적용
