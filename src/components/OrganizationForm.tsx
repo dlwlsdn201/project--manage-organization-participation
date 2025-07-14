@@ -95,6 +95,8 @@ export function OrganizationForm({
     } else {
       setDataSource([]);
     }
+    // Modal이 열릴 때마다 편집 상태 초기화
+    setEditingKey('');
   }, [organization, currentMembers]);
 
   const handleSubmit = async (values: any) => {
@@ -122,6 +124,7 @@ export function OrganizationForm({
   const handleCancel = () => {
     form.resetFields();
     setDataSource([]);
+    setEditingKey(''); // editingKey 초기화 추가
     onCancel();
   };
 
