@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { DateRangeFilter } from './DateRangeFilter';
-import { Member, Event } from '../types';
 import dayjs from 'dayjs';
 
 interface AttendanceTrackerProps {
@@ -9,12 +8,17 @@ interface AttendanceTrackerProps {
 }
 
 export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
-  const { members, events } = useAppStore();
+  const { members, events, organizations } = useAppStore();
   const [dateRange, setDateRange] = useState<{
     startDate?: Date;
     endDate?: Date;
     preset?: 'thisMonth' | 'lastMonth' | 'last3Months' | 'thisYear' | 'custom';
   }>({ preset: 'thisMonth' });
+
+  // 현재 조직 정보
+  const currentOrganization = organizations.find(
+    (org) => org.id === organizationId
+  );
 
   // 현재 조직의 데이터 필터링
   const organizationMembers = members.filter(
@@ -49,8 +53,12 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
       const attendanceRate =
         totalEvents > 0 ? (attendedEvents.length / totalEvents) * 100 : 0;
 
-      // 최소 참여 규칙 (월 2회 기본)
-      const minAttendancePerMonth = 2;
+      // 조직 설정에서 최소 참여 규칙 가져오기
+      const participationRule =
+        currentOrganization?.settings?.participationRule || '제한없음';
+      const minAttendancePerMonth =
+        participationRule === '제한없음' ? 0 : parseInt(participationRule, 10);
+
       const monthsInRange =
         dateRange.startDate && dateRange.endDate
           ? Math.max(
@@ -62,7 +70,8 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
             )
           : 1;
       const requiredAttendance = minAttendancePerMonth * monthsInRange;
-      const isAtRisk = attendedEvents.length < requiredAttendance;
+      const isAtRisk =
+        minAttendancePerMonth > 0 && attendedEvents.length < requiredAttendance;
 
       return {
         member,
@@ -74,7 +83,7 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
         deficit: Math.max(0, requiredAttendance - attendedEvents.length),
       };
     });
-  }, [organizationMembers, filteredEvents, dateRange]);
+  }, [organizationMembers, filteredEvents, dateRange, currentOrganization]);
 
   // 위험 멤버 수
   const riskMemberCount = memberStats.filter((stat) => stat.isAtRisk).length;
@@ -92,77 +101,126 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
     activeMembers: memberStats.filter((stat) => stat.attendedEvents > 0).length,
   };
 
-  const handleWarning = (memberId: string) => {
-    // 경고 처리 로직
-    console.log(`Warning sent to member: ${memberId}`);
-  };
-
-  const handleRemove = (memberId: string) => {
-    // 강퇴 처리 로직
-    if (window.confirm('정말로 이 구성원을 강퇴하시겠습니까?')) {
-      console.log(`Member removed: ${memberId}`);
+  // 참여 규칙 표시용 텍스트
+  const getParticipationRuleText = () => {
+    const participationRule =
+      currentOrganization?.settings?.participationRule || '제한없음';
+    if (participationRule === '제한없음') {
+      return '제한없음';
     }
+    return `월 ${participationRule}회 이상`;
   };
 
   return (
-    <div className="attendance-tracker">
-      <div className="attendance-header">
-        <h2>참여 분석</h2>
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      {/* 헤더 */}
+      <div className="flex justify-between items-center p-6 border-b border-slate-200 bg-slate-50">
+        <div>
+          <h2 className="text-xl font-semibold text-slate-900">참여 분석</h2>
+          <p className="text-sm text-slate-600 mt-1">
+            참여 규칙: {getParticipationRuleText()}
+          </p>
+        </div>
         <DateRangeFilter value={dateRange} onChange={setDateRange} />
       </div>
 
       {/* 전체 통계 요약 */}
-      <div className="stats-summary">
-        <div className="stat-card">
-          <h3>전체 구성원</h3>
-          <span className="stat-value">{overallStats.totalMembers}명</span>
-        </div>
-        <div className="stat-card">
-          <h3>총 모임 수</h3>
-          <span className="stat-value">{overallStats.totalEvents}회</span>
-        </div>
-        <div className="stat-card">
-          <h3>평균 참여율</h3>
-          <span className="stat-value">
-            {overallStats.averageAttendanceRate.toFixed(1)}%
-          </span>
-        </div>
-        <div className="stat-card danger">
-          <h3>위험 구성원</h3>
-          <span className="stat-value">{overallStats.riskMemberCount}명</span>
-        </div>
-        <div className="stat-card">
-          <h3>활성 구성원</h3>
-          <span className="stat-value">{overallStats.activeMembers}명</span>
+      <div className="p-6 bg-slate-50 border-b border-slate-200">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <h3 className="text-sm font-medium text-slate-600 mb-1">
+              전체 구성원
+            </h3>
+            <span className="text-2xl font-bold text-slate-900">
+              {overallStats.totalMembers}
+            </span>
+            <span className="text-sm text-slate-500 ml-1">명</span>
+          </div>
+          <div className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <h3 className="text-sm font-medium text-slate-600 mb-1">
+              총 모임 수
+            </h3>
+            <span className="text-2xl font-bold text-slate-900">
+              {overallStats.totalEvents}
+            </span>
+            <span className="text-sm text-slate-500 ml-1">회</span>
+          </div>
+          <div className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <h3 className="text-sm font-medium text-slate-600 mb-1">
+              평균 참여율
+            </h3>
+            <span className="text-2xl font-bold text-slate-900">
+              {overallStats.averageAttendanceRate.toFixed(1)}
+            </span>
+            <span className="text-sm text-slate-500 ml-1">%</span>
+          </div>
+          <div className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200 border-l-4 border-red-500">
+            <h3 className="text-sm font-medium text-red-600 mb-1">
+              저조한 구성원
+            </h3>
+            <span className="text-2xl font-bold text-red-700">
+              {overallStats.riskMemberCount}
+            </span>
+            <span className="text-sm text-red-500 ml-1">명</span>
+          </div>
+          <div className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <h3 className="text-sm font-medium text-slate-600 mb-1">
+              활성 구성원
+            </h3>
+            <span className="text-2xl font-bold text-green-700">
+              {overallStats.activeMembers}
+            </span>
+            <span className="text-sm text-slate-500 ml-1">명</span>
+          </div>
         </div>
       </div>
 
       {/* 구성원별 상세 분석 */}
-      <div className="member-analysis">
-        <h3>구성원별 참여 현황</h3>
+      <div className="p-6">
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">
+          구성원별 참여 현황
+        </h3>
 
         {memberStats.length === 0 ? (
-          <div className="empty-state">
-            <p>구성원이 없습니다.</p>
+          <div className="text-center py-16">
+            <div className="text-slate-400 text-6xl mb-4">👥</div>
+            <p className="text-slate-600 text-lg mb-2">구성원이 없습니다</p>
+            <p className="text-slate-500 text-sm">
+              조직에 구성원을 추가해보세요.
+            </p>
           </div>
         ) : (
-          <div className="member-stats-table">
-            <table>
+          <div className="overflow-x-auto">
+            <table className="w-full">
               <thead>
-                <tr>
-                  <th>이름</th>
-                  <th>성별</th>
-                  <th>나이</th>
-                  <th>거주지</th>
-                  <th>참여 횟수</th>
-                  <th>참여율</th>
-                  <th>필요 참여</th>
-                  <th>부족분</th>
-                  <th>상태</th>
-                  <th>관리</th>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                    이름
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                    성별
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                    나이
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                    거주지
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                    참여 횟수
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                    참여율
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                    권장 참여
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-900">
+                    상태
+                  </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-200">
                 {memberStats
                   .sort((a, b) => b.attendanceRate - a.attendanceRate)
                   .map(
@@ -175,51 +233,81 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
                       isAtRisk,
                       deficit,
                     }) => (
-                      <tr key={member.id} className={isAtRisk ? 'at-risk' : ''}>
-                        <td className="member-name">{member.name}</td>
-                        <td>{member.gender === 'male' ? '남성' : '여성'}</td>
-                        <td>
+                      <tr
+                        key={member.id}
+                        className={`hover:bg-slate-50 transition-colors duration-150 ${
+                          isAtRisk ? 'bg-red-50 border-l-4 border-red-400' : ''
+                        }`}
+                      >
+                        <td className="px-4 py-3 text-sm font-medium text-slate-900">
+                          {member.name}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {member.gender === 'male' ? '남성' : '여성'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
                           {new Date().getFullYear() - member.birthYear + 1}세
                         </td>
-                        <td>{member.district}</td>
-                        <td>
-                          {attendedEvents}/{totalEvents}
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {member.district}
                         </td>
-                        <td
-                          className={`attendance-rate ${attendanceRate < 50 ? 'low' : attendanceRate < 80 ? 'medium' : 'high'}`}
-                        >
-                          {attendanceRate.toFixed(1)}%
+                        <td className="px-4 py-3 text-sm text-slate-900">
+                          <span className="font-medium">{attendedEvents}</span>
+                          <span className="text-slate-500">/{totalEvents}</span>
                         </td>
-                        <td>{requiredAttendance}회</td>
-                        <td className={deficit > 0 ? 'deficit' : 'satisfied'}>
-                          {deficit > 0 ? `${deficit}회 부족` : '충족'}
+                        <td className="px-4 py-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 bg-gray-200 rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full transition-all duration-300 ${
+                                  attendanceRate >= 80
+                                    ? 'bg-green-500'
+                                    : attendanceRate >= 50
+                                      ? 'bg-yellow-500'
+                                      : 'bg-red-500'
+                                }`}
+                                style={{
+                                  width: `${Math.min(attendanceRate, 100)}%`,
+                                }}
+                              ></div>
+                            </div>
+                            <span
+                              className={`text-sm font-medium ${
+                                attendanceRate >= 80
+                                  ? 'text-green-700'
+                                  : attendanceRate >= 50
+                                    ? 'text-yellow-700'
+                                    : 'text-red-700'
+                              }`}
+                            >
+                              {attendanceRate.toFixed(1)}%
+                            </span>
+                          </div>
                         </td>
-                        <td>
-                          {isAtRisk ? (
-                            <span className="status-badge danger">위험</span>
-                          ) : (
-                            <span className="status-badge safe">안전</span>
-                          )}
-                        </td>
-                        <td>
-                          <div className="member-actions">
-                            {isAtRisk && (
-                              <>
-                                <button
-                                  className="btn btn-warning btn-sm"
-                                  onClick={() => handleWarning(member.id)}
-                                >
-                                  경고
-                                </button>
-                                <button
-                                  className="btn btn-danger btn-sm"
-                                  onClick={() => handleRemove(member.id)}
-                                >
-                                  강퇴
-                                </button>
-                              </>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          <div className="flex flex-col">
+                            <span>{requiredAttendance}회</span>
+                            {deficit > 0 && (
+                              <span className="text-xs text-red-600">
+                                ({deficit}회 부족)
+                              </span>
                             )}
                           </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {isAtRisk ? (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                              📉 저조
+                            </span>
+                          ) : attendanceRate >= 80 ? (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              ✨ 우수
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              ✅ 양호
+                            </span>
+                          )}
                         </td>
                       </tr>
                     )
@@ -230,43 +318,61 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
         )}
       </div>
 
-      {/* 위험 구성원 별도 표시 */}
+      {/* 참여 저조 구성원 요약 */}
       {riskMemberCount > 0 && (
-        <div className="risk-members-section">
-          <h3>⚠️ 주의 필요 구성원 ({riskMemberCount}명)</h3>
-          <div className="risk-members-list">
+        <div className="p-6 bg-orange-50 border-t border-orange-200">
+          <h3 className="text-lg font-semibold text-orange-900 mb-4 flex items-center gap-2">
+            📊 참여 저조 구성원 요약
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800">
+              {riskMemberCount}명
+            </span>
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {memberStats
               .filter((stat) => stat.isAtRisk)
               .map(
-                ({ member, attendedEvents, requiredAttendance, deficit }) => (
-                  <div key={member.id} className="risk-member-card">
-                    <div className="member-info">
-                      <h4>{member.name}</h4>
-                      <p>
+                ({
+                  member,
+                  attendedEvents,
+                  requiredAttendance,
+                  deficit,
+                  attendanceRate,
+                }) => (
+                  <div
+                    key={member.id}
+                    className="bg-white rounded-lg p-4 border border-orange-200 shadow-sm"
+                  >
+                    <div className="mb-3">
+                      <h4 className="font-semibold text-slate-900">
+                        {member.name}
+                      </h4>
+                      <p className="text-sm text-slate-600">
                         {member.gender === 'male' ? '남성' : '여성'},{' '}
                         {new Date().getFullYear() - member.birthYear + 1}세
                       </p>
-                      <p>거주지: {member.district}</p>
-                    </div>
-                    <div className="risk-details">
-                      <p className="attendance-info">
-                        참여: {attendedEvents}회 / 필요: {requiredAttendance}회
+                      <p className="text-sm text-slate-600">
+                        거주지: {member.district}
                       </p>
-                      <p className="deficit-info">{deficit}회 부족</p>
                     </div>
-                    <div className="risk-actions">
-                      <button
-                        className="btn btn-warning"
-                        onClick={() => handleWarning(member.id)}
-                      >
-                        경고 발송
-                      </button>
-                      <button
-                        className="btn btn-danger"
-                        onClick={() => handleRemove(member.id)}
-                      >
-                        강퇴 처리
-                      </button>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-600">참여율</span>
+                        <span className="font-medium text-red-700">
+                          {attendanceRate.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-600">참여 횟수</span>
+                        <span className="font-medium">
+                          {attendedEvents}회 / {requiredAttendance}회
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-600">부족분</span>
+                        <span className="font-medium text-red-700">
+                          {deficit}회
+                        </span>
+                      </div>
                     </div>
                   </div>
                 )
