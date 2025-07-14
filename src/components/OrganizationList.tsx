@@ -143,7 +143,7 @@ export function OrganizationList({
                 <h3 className="text-lg font-semibold text-primary">
                   {org.name}
                 </h3>
-                <span className="bg-accent text-white px-3 py-1 rounded-full text-xs font-medium">
+                <span className="bg-primary-500 text-white px-3 py-1 rounded-full text-xs font-medium">
                   {getTypeLabel(org.type)}
                 </span>
               </div>
@@ -160,9 +160,6 @@ export function OrganizationList({
                 <p className="flex items-center gap-2 text-slate-500 text-sm font-medium">
                   <Users size={16} className="text-primary" />
                   {org.currentMembers}/{org.maxMembers}명
-                </p>
-                <p className="text-primary text-xs font-medium mt-2 opacity-80 hover:opacity-100 transition-opacity">
-                  👆 클릭하여 관리하기
                 </p>
               </div>
 
