@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { Organization, Member } from '../types';
 import {
@@ -43,6 +43,8 @@ interface EditableMember extends Member {
   isNew?: boolean;
 }
 
+/* TODO - [구성원 관리 테이블에서 신규 구성원 정보 입력 기능 오류 수정해야함] */
+
 export function OrganizationForm({
   organization,
   onSubmit,
@@ -56,13 +58,19 @@ export function OrganizationForm({
   } = useAppStore();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [editingKey, setEditingKey] = useState<string>('');
+  const [editingKeys, setEditingKeys] = useState<string[]>([]);
   const [dataSource, setDataSource] = useState<EditableMember[]>([]);
-
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string[]>
+  >({});
   // 현재 조직의 구성원 목록
-  const currentMembers = organization
-    ? storeMembers.filter((m) => m.organizationId === organization.id)
-    : [];
+  const currentMembers = useMemo(
+    () =>
+      organization
+        ? storeMembers.filter((m) => m.organizationId === organization.id)
+        : [],
+    [organization, storeMembers]
+  );
 
   useEffect(() => {
     if (organization) {
@@ -91,15 +99,27 @@ export function OrganizationForm({
       const sortedMembers = [...currentMembers].sort(
         (a, b) => dayjs(b.joinedAt).valueOf() - dayjs(a.joinedAt).valueOf()
       );
-      setDataSource(sortedMembers);
+
+      // 기존 dataSource에서 임시 구성원들(isNew: true)을 보존
+      setDataSource((prev) => {
+        const tempMembers = prev.filter((member) => member.isNew);
+        return [...tempMembers, ...sortedMembers];
+      });
     } else {
-      setDataSource([]);
+      // 새 조직 생성 시에는 임시 구성원들만 보존
+      setDataSource((prev) => prev.filter((member) => member.isNew));
     }
     // Modal이 열릴 때마다 편집 상태 초기화
     setEditingKey('');
   }, [organization, currentMembers]);
 
   const handleSubmit = async (values: any) => {
+    // 임시 구성원 유효성 검사
+    if (!validateAllTempMembers()) {
+      message.error('모든 구성원 정보를 올바르게 입력해주세요.');
+      return;
+    }
+
     setLoading(true);
     try {
       const orgData: Partial<Organization> = {
@@ -128,18 +148,68 @@ export function OrganizationForm({
     onCancel();
   };
 
-  const isEditing = (record: EditableMember) => record.id === editingKey;
+  const isEditing = (record: EditableMember) => editingKeys.includes(record.id);
 
   const edit = (record: EditableMember) => {
-    setEditingKey(record.id);
+    setEditingKeys((prev) => [...prev, record.id]);
   };
 
-  const cancel = () => {
-    setEditingKey('');
-    // 새로운 행이면 제거
-    setDataSource((prev) =>
-      prev.filter((item) => !item.isNew || item.id !== editingKey)
-    );
+  const cancel = (id?: string) => {
+    if (id) {
+      setEditingKeys((prev) => prev.filter((key) => key !== id));
+      // 새로운 행이면 제거
+      setDataSource((prev) =>
+        prev.filter((item) => !item.isNew || item.id !== id)
+      );
+      // 유효성 검사 에러 제거
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[id];
+        return newErrors;
+      });
+    } else {
+      // 모든 편집 취소
+      setEditingKeys([]);
+      setDataSource((prev) => prev.filter((item) => !item.isNew));
+      setValidationErrors({});
+    }
+  };
+
+  // 유효성 검사 함수
+  const validateMember = (member: EditableMember): string[] => {
+    const errors: string[] = [];
+    if (!member.name?.trim()) errors.push('이름을 입력해주세요.');
+    if (!member.gender) errors.push('성별을 선택해주세요.');
+    if (
+      !member.birthYear ||
+      member.birthYear < 1950 ||
+      member.birthYear > new Date().getFullYear()
+    ) {
+      errors.push('올바른 출생연도를 입력해주세요.');
+    }
+    if (!member.district?.trim()) errors.push('거주지를 입력해주세요.');
+    return errors;
+  };
+
+  // 모든 임시 구성원 유효성 검사
+  const validateAllTempMembers = (): boolean => {
+    const tempMembers = dataSource.filter((member) => member.isNew);
+    const newErrors: Record<string, string[]> = {};
+    let hasErrors = false;
+
+    tempMembers.forEach((member) => {
+      const errors = validateMember(member);
+      if (errors.length > 0) {
+        newErrors[member.id] = errors;
+        hasErrors = true;
+      }
+    });
+
+    setValidationErrors((prev) => ({
+      ...prev,
+      ...newErrors,
+    }));
+    return !hasErrors;
   };
 
   const save = async (id: string) => {
@@ -148,16 +218,20 @@ export function OrganizationForm({
       if (!row) return;
 
       const { isEditing, isNew, ...memberData } = row;
+      const errors = validateMember(row);
 
-      if (
-        !memberData.name ||
-        !memberData.gender ||
-        !memberData.birthYear ||
-        !memberData.district
-      ) {
-        message.error('모든 필수 필드를 입력해주세요.');
+      if (errors.length > 0) {
+        setValidationErrors((prev) => ({ ...prev, [id]: errors }));
+        message.error('모든 필수 필드를 올바르게 입력해주세요.');
         return;
       }
+
+      // 에러 제거
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[id];
+        return newErrors;
+      });
 
       if (isNew) {
         const newMember: Member = {
@@ -190,7 +264,7 @@ export function OrganizationForm({
         );
       }
 
-      setEditingKey('');
+      setEditingKeys((prev) => prev.filter((key) => key !== id));
       message.success(
         isNew ? '구성원이 추가되었습니다.' : '구성원이 수정되었습니다.'
       );
@@ -224,13 +298,32 @@ export function OrganizationForm({
     };
 
     setDataSource((prev) => [newMember, ...prev]);
-    setEditingKey(newMember.id);
+    setEditingKeys((prev) => [...prev, newMember.id]);
   };
 
   const handleCellChange = (id: string, field: string, value: any) => {
     setDataSource((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
+
+    // 데이터 변경 후 유효성 검사 업데이트
+    setTimeout(() => {
+      const member = dataSource.find((m) => m.id === id);
+      if (member) {
+        const updatedMember = { ...member, [field]: value };
+        const errors = validateMember(updatedMember);
+
+        setValidationErrors((prevErrors) => {
+          const newErrors = { ...prevErrors };
+          if (errors.length > 0) {
+            newErrors[id] = errors;
+          } else {
+            delete newErrors[id];
+          }
+          return newErrors;
+        });
+      }
+    }, 0);
   };
 
   const EditableCell = ({
@@ -247,6 +340,7 @@ export function OrganizationForm({
       case 'joinedAt':
         inputNode = (
           <DatePicker
+            key={`${record?.id}-${dataIndex}`}
             value={record?.[dataIndex] ? dayjs(record[dataIndex]) : dayjs()}
             onChange={(date) =>
               handleCellChange(record?.id, dataIndex, date?.toDate())
@@ -259,6 +353,7 @@ export function OrganizationForm({
       case 'gender':
         inputNode = (
           <Select
+            key={`${record?.id}-${dataIndex}`}
             value={record?.[dataIndex]}
             onChange={(value) => handleCellChange(record?.id, dataIndex, value)}
             style={{ width: '100%' }}
@@ -271,6 +366,7 @@ export function OrganizationForm({
       case 'birthYear':
         inputNode = (
           <InputNumber
+            key={`${record?.id}-${dataIndex}`}
             min={1950}
             max={new Date().getFullYear()}
             value={record?.[dataIndex]}
@@ -282,10 +378,12 @@ export function OrganizationForm({
       default:
         inputNode = (
           <Input
-            value={record?.[dataIndex]}
+            key={`${record?.id}-${dataIndex}`}
+            value={record?.[dataIndex] || ''}
             onChange={(e) =>
               handleCellChange(record?.id, dataIndex, e.target.value)
             }
+            autoFocus={record?.isNew && !record?.[dataIndex]}
           />
         );
     }
@@ -360,7 +458,7 @@ export function OrganizationForm({
               icon={<CloseOutlined />}
               type="link"
               size="small"
-              onClick={cancel}
+              onClick={() => cancel(record.id)}
             />
           </Space>
         ) : (
@@ -370,7 +468,7 @@ export function OrganizationForm({
               size="small"
               icon={<EditOutlined />}
               onClick={() => edit(record)}
-              disabled={editingKey !== ''}
+              disabled={editingKeys.length > 0}
             />
             <Popconfirm
               title="구성원을 삭제하시겠습니까?"
@@ -383,7 +481,7 @@ export function OrganizationForm({
                 size="small"
                 danger
                 icon={<DeleteOutlined />}
-                disabled={editingKey !== ''}
+                disabled={editingKeys.length > 0}
               />
             </Popconfirm>
           </Space>
@@ -533,7 +631,7 @@ export function OrganizationForm({
                 icon={<PlusOutlined />}
                 onClick={handleAdd}
                 size="small"
-                disabled={editingKey !== ''}
+                disabled={false}
               >
                 구성원 추가
               </Button>
@@ -557,6 +655,37 @@ export function OrganizationForm({
           />
         </Card>
 
+        {/* 유효성 검사 에러 메시지 */}
+        {Object.keys(validationErrors).length > 0 && (
+          <Card
+            style={{
+              marginBottom: 24,
+              borderColor: '#ff4d4f',
+              backgroundColor: '#fff2f0',
+            }}
+          >
+            <div style={{ color: '#ff4d4f' }}>
+              <Text strong style={{ color: '#ff4d4f' }}>
+                구성원 정보 오류:
+              </Text>
+              {Object.entries(validationErrors).map(([memberId, errors]) => {
+                const member = dataSource.find((m) => m.id === memberId);
+                const memberName = member?.name || '새 구성원';
+                return (
+                  <div key={memberId} style={{ marginTop: 8 }}>
+                    <Text strong>{memberName}:</Text>
+                    <ul style={{ margin: '4px 0', paddingLeft: 20 }}>
+                      {errors.map((error, index) => (
+                        <li key={index}>{error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
         <Form.Item style={{ marginBottom: 0, marginTop: 32 }}>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
             <Button size="large" onClick={handleCancel}>
@@ -567,6 +696,7 @@ export function OrganizationForm({
               htmlType="submit"
               loading={loading}
               size="large"
+              disabled={Object.keys(validationErrors).length > 0}
             >
               {organization ? '수정' : '생성'}
             </Button>
