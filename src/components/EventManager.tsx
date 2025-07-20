@@ -3,6 +3,7 @@ import { useAppStore } from '../store/useAppStore';
 import { Event, Member } from '../types';
 import { EventForm } from './EventForm';
 import { DateRangeFilter } from './DateRangeFilter';
+import { message } from 'antd';
 import dayjs from 'dayjs';
 
 interface EventManagerProps {
@@ -51,7 +52,7 @@ export function EventManager({ organizationId }: EventManagerProps) {
   const memberStats = useMemo(() => {
     return organizationMembers.map((member) => {
       const attendedEvents = organizationEvents.filter((event) =>
-        event.attendees.includes(member.id)
+        event.attendees.includes(member._id)
       );
       const totalEvents = organizationEvents.length;
       const attendanceRate =
@@ -77,41 +78,49 @@ export function EventManager({ organizationId }: EventManagerProps) {
     setShowForm(true);
   };
 
-  const handleDeleteEvent = (eventId: string) => {
+  const handleDeleteEvent = async (eventId: string) => {
     if (window.confirm('정말로 이 모임을 삭제하시겠습니까?')) {
-      deleteEvent(eventId);
+      try {
+        await deleteEvent(eventId);
+        message.success('모임이 삭제되었습니다.');
+      } catch (error) {
+        message.error('모임 삭제 중 오류가 발생했습니다.');
+      }
     }
   };
 
-  const handleFormSubmit = (data: Partial<Event>) => {
-    if (editingEvent) {
-      const updatedEvent: Event = {
-        ...editingEvent,
-        ...data,
-        updatedAt: new Date(),
-      };
-      updateEvent(updatedEvent);
-    } else {
-      const newEvent: Event = {
-        id: `event_${Date.now()}`,
-        organizationId,
-        title: data.title || '',
-        description: data.description || '',
-        date: data.date || new Date(),
-        location: data.location || '',
-        hostId: data.hostId || '',
-        maxParticipants: data.maxParticipants,
-        currentParticipants: data.attendees?.length || 0,
-        status: 'published',
-        attendees: data.attendees || [],
-        createdBy: 'current_user',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      addEvent(newEvent);
+  const handleFormSubmit = async (data: Partial<Event>) => {
+    try {
+      if (editingEvent) {
+        const updatedEvent: Event = {
+          ...editingEvent,
+          ...data,
+          updatedAt: new Date(),
+        };
+        await updateEvent(updatedEvent);
+        message.success('모임이 수정되었습니다.');
+      } else {
+        const newEvent: Partial<Event> = {
+          organizationId,
+          title: data.title || '',
+          description: data.description || '',
+          date: data.date || new Date(),
+          location: data.location || '',
+          hostId: data.hostId || '',
+          maxParticipants: data.maxParticipants,
+          currentParticipants: data.attendees?.length || 0,
+          status: 'published',
+          attendees: data.attendees || [],
+          createdBy: 'current_user',
+        };
+        await addEvent(newEvent);
+        message.success('모임이 생성되었습니다.');
+      }
+      setShowForm(false);
+      setEditingEvent(null);
+    } catch (error) {
+      message.error('모임 저장 중 오류가 발생했습니다.');
     }
-    setShowForm(false);
-    setEditingEvent(null);
   };
 
   const handleFormCancel = () => {
@@ -189,7 +198,7 @@ export function EventManager({ organizationId }: EventManagerProps) {
             <div className="flex flex-col gap-3">
               {filteredEvents.map((event) => (
                 <div
-                  key={event.id}
+                  key={event._id}
                   className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
                 >
                   <div className="flex justify-between items-start mb-3">
@@ -228,7 +237,7 @@ export function EventManager({ organizationId }: EventManagerProps) {
                     <div className="flex flex-wrap gap-1">
                       {event.attendees.map((attendeeId) => {
                         const member = organizationMembers.find(
-                          (m) => m.id === attendeeId
+                          (m) => m._id === attendeeId
                         );
                         return member ? (
                           <span
@@ -251,7 +260,7 @@ export function EventManager({ organizationId }: EventManagerProps) {
                     </button>
                     <button
                       className="px-3 py-1.5 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-                      onClick={() => handleDeleteEvent(event.id)}
+                      onClick={() => handleDeleteEvent(event._id)}
                     >
                       삭제
                     </button>
@@ -277,7 +286,7 @@ export function EventManager({ organizationId }: EventManagerProps) {
                 isAtRisk,
               }) => (
                 <div
-                  key={member.id}
+                  key={member._id}
                   className={`bg-white border rounded-md p-3 transition-all duration-200 hover:shadow-md ${
                     isAtRisk
                       ? 'border-yellow-400 bg-yellow-50'

@@ -17,7 +17,7 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
 
   // 현재 조직 정보
   const currentOrganization = organizations.find(
-    (org) => org.id === organizationId
+    (org) => org._id === organizationId
   );
 
   // 현재 조직의 데이터 필터링
@@ -28,26 +28,35 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
     (e) => e.organizationId === organizationId
   );
 
-  // 날짜 범위에 따른 이벤트 필터링
+  // 날짜 범위에 따른 이벤트 필터링 (과거 이벤트만 포함)
   const filteredEvents = useMemo(() => {
-    if (!dateRange.startDate || !dateRange.endDate) {
-      return organizationEvents;
+    const now = dayjs();
+
+    // 기본적으로 과거 이벤트만 필터링
+    let events = organizationEvents.filter((event) => {
+      const eventDate = dayjs(event.date);
+      return eventDate.isBefore(now); // 과거 이벤트만 포함
+    });
+
+    // 날짜 범위가 설정된 경우 추가 필터링
+    if (dateRange.startDate && dateRange.endDate) {
+      events = events.filter((event) => {
+        const eventDate = dayjs(event.date);
+        return (
+          eventDate.isAfter(dayjs(dateRange.startDate).subtract(1, 'day')) &&
+          eventDate.isBefore(dayjs(dateRange.endDate).add(1, 'day'))
+        );
+      });
     }
 
-    return organizationEvents.filter((event) => {
-      const eventDate = dayjs(event.date);
-      return (
-        eventDate.isAfter(dayjs(dateRange.startDate).subtract(1, 'day')) &&
-        eventDate.isBefore(dayjs(dateRange.endDate).add(1, 'day'))
-      );
-    });
+    return events;
   }, [organizationEvents, dateRange]);
 
   // 멤버별 참여 통계 계산
   const memberStats = useMemo(() => {
     return organizationMembers.map((member) => {
       const attendedEvents = filteredEvents.filter((event) =>
-        event.attendees.includes(member.id)
+        event.attendees.includes(member._id)
       );
       const totalEvents = filteredEvents.length;
       const attendanceRate =
@@ -234,7 +243,7 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
                       deficit,
                     }) => (
                       <tr
-                        key={member.id}
+                        key={member._id}
                         className={`hover:bg-slate-50 transition-colors duration-150 ${
                           isAtRisk ? 'bg-red-50 border-l-4 border-red-400' : ''
                         }`}
@@ -339,7 +348,7 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
                   attendanceRate,
                 }) => (
                   <div
-                    key={member.id}
+                    key={member._id}
                     className="bg-white rounded-lg p-4 border border-orange-200 shadow-sm"
                   >
                     <div className="mb-3">

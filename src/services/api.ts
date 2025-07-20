@@ -182,24 +182,86 @@ export const memberApi = {
     }),
 };
 
-// 이벤트 관련 API (향후 구현)
+// 이벤트 관련 API
 export const eventApi = {
-  // 기본 CRUD 작업들
-  getAll: () => apiCall<Event[]>('/events'),
+  // 모든 이벤트 조회 (필터링 지원)
+  getAll: (params?: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    organizationId?: string;
+    status?: string;
+  }) => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, value.toString());
+        }
+      });
+    }
+    return apiCall<Event[]>(`/events?${searchParams.toString()}`);
+  },
+
+  // 특정 이벤트 조회
   getById: (id: string) => apiCall<Event>(`/events/${id}`),
+
+  // 조직별 이벤트 조회
+  getByOrganization: (
+    organizationId: string,
+    params?: {
+      page?: number;
+      limit?: number;
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
+    }
+  ) => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, value.toString());
+        }
+      });
+    }
+    return apiCall<Event[]>(
+      `/events/organization/${organizationId}?${searchParams.toString()}`
+    );
+  },
+
+  // 이벤트 생성
   create: (event: Partial<Event>) =>
     apiCall<Event>('/events', {
       method: 'POST',
       body: JSON.stringify(event),
     }),
+
+  // 이벤트 수정
   update: (id: string, event: Partial<Event>) =>
     apiCall<Event>(`/events/${id}`, {
       method: 'PUT',
       body: JSON.stringify(event),
     }),
+
+  // 이벤트 삭제
   delete: (id: string) =>
     apiCall<void>(`/events/${id}`, {
       method: 'DELETE',
+    }),
+
+  // 참여자 추가/제거
+  updateAttendance: (id: string, memberId: string, action: 'add' | 'remove') =>
+    apiCall<Event>(`/events/${id}/attendance`, {
+      method: 'PATCH',
+      body: JSON.stringify({ memberId, action }),
+    }),
+
+  // 이벤트 상태 변경
+  updateStatus: (id: string, status: Event['status']) =>
+    apiCall<Event>(`/events/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
     }),
 };
 
@@ -215,6 +277,65 @@ export const activityLogApi = {
     }),
 };
 
+// 분석 API
+export const analyticsApi = {
+  // 조직별 참여 분석
+  getOrganizationAnalytics: (
+    organizationId: string,
+    params?: {
+      startDate?: string;
+      endDate?: string;
+    }
+  ) => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, value);
+        }
+      });
+    }
+    return apiCall<any>(
+      `/analytics/organization/${organizationId}?${searchParams.toString()}`
+    );
+  },
+
+  // 멤버별 상세 분석
+  getMemberAnalytics: (
+    organizationId: string,
+    memberId: string,
+    params?: {
+      startDate?: string;
+      endDate?: string;
+    }
+  ) => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, value);
+        }
+      });
+    }
+    return apiCall<any>(
+      `/analytics/member/${organizationId}/${memberId}?${searchParams.toString()}`
+    );
+  },
+
+  // 전체 시스템 분석
+  getSystemAnalytics: (params?: { startDate?: string; endDate?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          searchParams.append(key, value);
+        }
+      });
+    }
+    return apiCall<any>(`/analytics/system?${searchParams.toString()}`);
+  },
+};
+
 // 초기 데이터 로딩 API
 export const initialDataApi = {
   // 모든 초기 데이터를 한 번에 로드
@@ -222,18 +343,25 @@ export const initialDataApi = {
     organizations: Organization[];
     members: Member[];
     activityLogs: ActivityLog[];
+    events: Event[];
   }> => {
-    const [organizationsResponse, membersResponse, activityLogsResponse] =
-      await Promise.all([
-        organizationApi.getAll(),
-        memberApi.getAll(),
-        activityLogApi.getAll(),
-      ]);
+    const [
+      organizationsResponse,
+      membersResponse,
+      activityLogsResponse,
+      eventsResponse,
+    ] = await Promise.all([
+      organizationApi.getAll(),
+      memberApi.getAll(),
+      activityLogApi.getAll(),
+      eventApi.getAll(),
+    ]);
 
     return {
       organizations: organizationsResponse || [],
       members: membersResponse || [],
       activityLogs: activityLogsResponse || [],
+      events: eventsResponse || [],
     };
   },
 };

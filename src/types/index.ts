@@ -11,7 +11,7 @@ export interface User {
 
 // 조직 구성원 타입
 export interface Member {
-  id: string;
+  _id: string;
   name: string;
   gender: 'male' | 'female';
   birthYear: number; // 년생
@@ -66,7 +66,7 @@ export interface Participant {
 
 // 이벤트 타입 (오프라인 모임)
 export interface Event {
-  id: string;
+  _id: string;
   organizationId: string;
   title: string;
   description?: string;

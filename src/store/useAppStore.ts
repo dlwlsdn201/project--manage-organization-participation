@@ -11,7 +11,13 @@ import {
   AttendanceStats,
   OrganizationRules,
 } from '../types';
-import { organizationApi, memberApi, activityLogApi } from '../services/api';
+import {
+  organizationApi,
+  memberApi,
+  activityLogApi,
+  eventApi,
+  analyticsApi,
+} from '../services/api';
 
 interface AppState {
   // 상태
@@ -175,10 +181,10 @@ export const useAppStore = create<AppState>()(
       },
       updateMember: async (member) => {
         try {
-          const updatedMember = await memberApi.update(member.id, member);
+          const updatedMember = await memberApi.update(member._id, member);
           set((state) => ({
             members: state.members.map((m) =>
-              m.id === updatedMember.id ? updatedMember : m
+              m._id === updatedMember._id ? updatedMember : m
             ),
           }));
           return updatedMember;
@@ -191,7 +197,7 @@ export const useAppStore = create<AppState>()(
         try {
           await memberApi.delete(id);
           set((state) => ({
-            members: state.members.filter((m) => m.id !== id),
+            members: state.members.filter((m) => m._id !== id),
           }));
         } catch (error) {
           console.error('구성원 삭제 실패:', error);
@@ -201,18 +207,43 @@ export const useAppStore = create<AppState>()(
 
       // 이벤트 액션
       setEvents: (events) => set({ events }),
-      addEvent: (event) =>
-        set((state) => ({
-          events: [...state.events, event],
-        })),
-      updateEvent: (event) =>
-        set((state) => ({
-          events: state.events.map((e) => (e.id === event.id ? event : e)),
-        })),
-      deleteEvent: (id) =>
-        set((state) => ({
-          events: state.events.filter((e) => e.id !== id),
-        })),
+      addEvent: async (event: Partial<Event>) => {
+        try {
+          const newEvent = await eventApi.create(event);
+          set((state) => ({
+            events: [...state.events, newEvent],
+          }));
+          return newEvent;
+        } catch (error) {
+          console.error('이벤트 생성 실패:', error);
+          throw error;
+        }
+      },
+      updateEvent: async (event) => {
+        try {
+          const updatedEvent = await eventApi.update(event._id, event);
+          set((state) => ({
+            events: state.events.map((e) =>
+              e._id === updatedEvent._id ? updatedEvent : e
+            ),
+          }));
+          return updatedEvent;
+        } catch (error) {
+          console.error('이벤트 수정 실패:', error);
+          throw error;
+        }
+      },
+      deleteEvent: async (id) => {
+        try {
+          await eventApi.delete(id);
+          set((state) => ({
+            events: state.events.filter((e) => e._id !== id),
+          }));
+        } catch (error) {
+          console.error('이벤트 삭제 실패:', error);
+          throw error;
+        }
+      },
 
       // 활동 로그 액션
       setActivityLogs: (activityLogs) => set({ activityLogs }),

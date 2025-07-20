@@ -106,6 +106,28 @@ export function OrganizationList({
           updatedAt: new Date(),
         };
         await updateOrganization(updatedOrganization);
+
+        // 구성원 정보가 있으면 생성 (조직 수정 시)
+        if (data.members && data.members.length > 0) {
+          console.log('조직 수정 - 구성원 생성 시작:', data.members);
+          const memberPromises = data.members.map(async (member) => {
+            const newMember: Partial<Member> = {
+              ...member,
+              organizationId: updatedOrganization._id,
+              status: 'active' as const,
+              joinedAt: member.joinedAt || new Date(),
+              updatedAt: new Date(),
+            };
+            console.log('생성할 구성원 데이터:', newMember);
+            return await memberApi.create(newMember);
+          });
+
+          const createdMembers = await Promise.all(memberPromises);
+          console.log('조직 수정 - 생성된 구성원들:', createdMembers);
+          // 로컬 상태에 구성원 추가
+          setMembers([...members, ...createdMembers]);
+        }
+
         await addActivityLog({
           id: `log_${Date.now()}`,
           organizationId: updatedOrganization._id,

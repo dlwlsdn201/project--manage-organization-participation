@@ -36,6 +36,7 @@ function App() {
         const data = await initialDataApi.loadAll();
         setOrganizations(data.organizations || []);
         setMembers(data.members || []);
+        setEvents(data.events || []);
         setActivityLogs(data.activityLogs || []);
 
         // 기본 사용자 설정 (임시)

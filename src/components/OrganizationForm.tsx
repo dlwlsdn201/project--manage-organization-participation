@@ -38,7 +38,17 @@ interface OrganizationFormProps {
   onCancel: () => void;
 }
 
-interface EditableMember extends Member {
+interface EditableMember {
+  id: string; // 임시 ID (편집용)
+  _id?: string; // 실제 DB ID (기존 멤버의 경우)
+  name: string;
+  gender: 'male' | 'female';
+  birthYear: number;
+  district: string;
+  organizationId: string;
+  status: 'active' | 'inactive';
+  joinedAt: Date;
+  updatedAt: Date;
   isEditing?: boolean;
   isNew?: boolean;
 }
@@ -103,7 +113,13 @@ export function OrganizationForm({
       // 기존 dataSource에서 임시 구성원들(isNew: true)을 보존
       setDataSource((prev) => {
         const tempMembers = prev.filter((member) => member.isNew);
-        return [...tempMembers, ...sortedMembers];
+        const convertedMembers: EditableMember[] = sortedMembers.map(
+          (member) => ({
+            ...member,
+            id: member._id, // Member의 _id를 EditableMember의 id로 사용
+          })
+        );
+        return [...tempMembers, ...convertedMembers];
       });
     } else {
       // 새 조직 생성 시에는 임시 구성원들만 보존
@@ -131,12 +147,10 @@ export function OrganizationForm({
 
       // 구성원 정보도 함께 전달
       const tempMembers = dataSource.filter((member) => member.isNew);
-      console.log('전달할 구성원 데이터:', tempMembers);
       const submitData = {
         ...orgData,
         members: tempMembers.map(({ isEditing, isNew, ...member }) => member),
       };
-      console.log('최종 전달 데이터:', submitData);
 
       await onSubmit(submitData);
       message.success(
@@ -254,26 +268,18 @@ export function OrganizationForm({
         });
 
         if (isNew) {
-          const newMember: Member = {
-            ...memberData,
-            organizationId: organization?._id || 'temp',
-            status: 'active',
-            joinedAt: memberData.joinedAt || new Date(),
-            updatedAt: new Date(),
-          };
-
-          if (organization) {
-            addMember(newMember);
-          }
-
+          // 새 구성원의 경우 store에 추가하지 않고 dataSource에서만 관리
+          // 실제 저장은 조직 생성/수정 시에만 수행
           setDataSource((prev) =>
             prev.map((item) =>
-              item.id === id ? { ...newMember, isNew: true } : item
+              item.id === id ? { ...memberData, isNew: true } : item
             )
           );
         } else {
+          // 기존 구성원 수정의 경우에만 store 업데이트
           const updatedMember: Member = {
             ...memberData,
+            _id: memberData._id || '',
             updatedAt: new Date(),
           };
 
@@ -282,7 +288,9 @@ export function OrganizationForm({
           }
 
           setDataSource((prev) =>
-            prev.map((item) => (item.id === id ? updatedMember : item))
+            prev.map((item) =>
+              item.id === id ? { ...updatedMember, id: item.id } : item
+            )
           );
         }
 
@@ -433,7 +441,7 @@ export function OrganizationForm({
       width: 120,
       editable: true,
       render: (date: Date) => dayjs(date).format('YYYY.MM.DD'),
-      sorter: (a: Member, b: Member) =>
+      sorter: (a: EditableMember, b: EditableMember) =>
         dayjs(b.joinedAt).valueOf() - dayjs(a.joinedAt).valueOf(),
       defaultSortOrder: 'descend' as const,
     },

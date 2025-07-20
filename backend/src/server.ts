@@ -48,12 +48,15 @@ app.get('/health', (req, res) => {
 import organizationRoutes from './routes/organizationRoutes.js';
 import memberRoutes from './routes/memberRoutes.js';
 import activityLogRoutes from './routes/activityLogRoutes.js';
+import eventRoutes from './routes/eventRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
 
 // API 라우트 설정
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/logs', activityLogRoutes);
-// app.use('/api/events', eventRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // 404 핸들러
 app.use(notFoundHandler);

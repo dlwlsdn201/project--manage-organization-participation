@@ -45,6 +45,13 @@ export function EventForm({
       member.organizationId === organizationId && member.status === 'active'
   );
 
+  // 디버깅용 로그
+  useEffect(() => {
+    console.log('EventForm - organizationId:', organizationId);
+    console.log('EventForm - all members:', members);
+    console.log('EventForm - organizationMembers:', organizationMembers);
+  }, [organizationId, members, organizationMembers]);
+
   useEffect(() => {
     if (event) {
       form.setFieldsValue({
@@ -207,7 +214,7 @@ export function EventForm({
               (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
             }
             options={organizationMembers.map((member) => ({
-              value: member.id,
+              value: member._id,
               label: `${member.name} (${member.gender === 'male' ? '남' : '여'}, ${new Date().getFullYear() - member.birthYear + 1}세)`,
             }))}
           />
@@ -239,7 +246,7 @@ export function EventForm({
               (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
             }
             options={organizationMembers.map((member) => ({
-              value: member.id,
+              value: member._id,
               label: `${member.name} (${member.gender === 'male' ? '남' : '여'}, ${new Date().getFullYear() - member.birthYear + 1}세, ${member.district})`,
             }))}
             maxTagCount="responsive"
