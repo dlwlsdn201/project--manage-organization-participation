@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon --exec tsx src/server.ts",
+    "dev": "PORT=8000 nodemon --exec tsx src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "seed": "tsx src/scripts/seed.ts"
