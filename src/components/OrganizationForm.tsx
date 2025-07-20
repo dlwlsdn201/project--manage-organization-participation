@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { Organization, Member } from '../types';
 import {
@@ -110,7 +110,7 @@ export function OrganizationForm({
       setDataSource((prev) => prev.filter((member) => member.isNew));
     }
     // Modal이 열릴 때마다 편집 상태 초기화
-    setEditingKey('');
+    setEditingKeys([]);
   }, [organization, currentMembers]);
 
   const handleSubmit = async (values: any) => {
@@ -144,17 +144,20 @@ export function OrganizationForm({
   const handleCancel = () => {
     form.resetFields();
     setDataSource([]);
-    setEditingKey(''); // editingKey 초기화 추가
+    setEditingKeys([]); // editingKeys 초기화 추가
     onCancel();
   };
 
-  const isEditing = (record: EditableMember) => editingKeys.includes(record.id);
+  const isEditing = useCallback(
+    (record: EditableMember) => editingKeys.includes(record.id),
+    [editingKeys]
+  );
 
-  const edit = (record: EditableMember) => {
+  const edit = useCallback((record: EditableMember) => {
     setEditingKeys((prev) => [...prev, record.id]);
-  };
+  }, []);
 
-  const cancel = (id?: string) => {
+  const cancel = useCallback((id?: string) => {
     if (id) {
       setEditingKeys((prev) => prev.filter((key) => key !== id));
       // 새로운 행이면 제거
@@ -173,7 +176,7 @@ export function OrganizationForm({
       setDataSource((prev) => prev.filter((item) => !item.isNew));
       setValidationErrors({});
     }
-  };
+  }, []);
 
   // 유효성 검사 함수
   const validateMember = (member: EditableMember): string[] => {
@@ -212,67 +215,70 @@ export function OrganizationForm({
     return !hasErrors;
   };
 
-  const save = async (id: string) => {
-    try {
-      const row = dataSource.find((item) => item.id === id);
-      if (!row) return;
+  const save = useCallback(
+    async (id: string) => {
+      try {
+        const row = dataSource.find((item) => item.id === id);
+        if (!row) return;
 
-      const { isEditing, isNew, ...memberData } = row;
-      const errors = validateMember(row);
+        const { isEditing, isNew, ...memberData } = row;
+        const errors = validateMember(row);
 
-      if (errors.length > 0) {
-        setValidationErrors((prev) => ({ ...prev, [id]: errors }));
-        message.error('모든 필수 필드를 올바르게 입력해주세요.');
-        return;
-      }
-
-      // 에러 제거
-      setValidationErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[id];
-        return newErrors;
-      });
-
-      if (isNew) {
-        const newMember: Member = {
-          ...memberData,
-          organizationId: organization?.id || 'temp',
-          status: 'active',
-          joinedAt: memberData.joinedAt || new Date(),
-          updatedAt: new Date(),
-        };
-
-        if (organization) {
-          addMember(newMember);
+        if (errors.length > 0) {
+          setValidationErrors((prev) => ({ ...prev, [id]: errors }));
+          message.error('모든 필수 필드를 올바르게 입력해주세요.');
+          return;
         }
 
-        setDataSource((prev) =>
-          prev.map((item) => (item.id === id ? { ...newMember } : item))
-        );
-      } else {
-        const updatedMember: Member = {
-          ...memberData,
-          updatedAt: new Date(),
-        };
+        // 에러 제거
+        setValidationErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors[id];
+          return newErrors;
+        });
 
-        if (organization) {
-          updateMember(updatedMember);
+        if (isNew) {
+          const newMember: Member = {
+            ...memberData,
+            organizationId: organization?.id || 'temp',
+            status: 'active',
+            joinedAt: memberData.joinedAt || new Date(),
+            updatedAt: new Date(),
+          };
+
+          if (organization) {
+            addMember(newMember);
+          }
+
+          setDataSource((prev) =>
+            prev.map((item) => (item.id === id ? { ...newMember } : item))
+          );
+        } else {
+          const updatedMember: Member = {
+            ...memberData,
+            updatedAt: new Date(),
+          };
+
+          if (organization) {
+            updateMember(updatedMember);
+          }
+
+          setDataSource((prev) =>
+            prev.map((item) => (item.id === id ? updatedMember : item))
+          );
         }
 
-        setDataSource((prev) =>
-          prev.map((item) => (item.id === id ? updatedMember : item))
+        setEditingKeys((prev) => prev.filter((key) => key !== id));
+        message.success(
+          isNew ? '구성원이 추가되었습니다.' : '구성원이 수정되었습니다.'
         );
+      } catch (error) {
+        console.error('Save error:', error);
+        message.error('저장 중 오류가 발생했습니다.');
       }
-
-      setEditingKeys((prev) => prev.filter((key) => key !== id));
-      message.success(
-        isNew ? '구성원이 추가되었습니다.' : '구성원이 수정되었습니다.'
-      );
-    } catch (error) {
-      console.error('Save error:', error);
-      message.error('저장 중 오류가 발생했습니다.');
-    }
-  };
+    },
+    [dataSource, organization, addMember, updateMember]
+  );
 
   const handleDelete = (id: string) => {
     if (organization) {
@@ -299,97 +305,107 @@ export function OrganizationForm({
 
     setDataSource((prev) => [newMember, ...prev]);
     setEditingKeys((prev) => [...prev, newMember.id]);
+
+    // 새 구성원 추가 시 해당 행의 유효성 검사 에러 제거
+    setValidationErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[newMember.id];
+      return newErrors;
+    });
   };
 
-  const handleCellChange = (id: string, field: string, value: any) => {
-    setDataSource((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
-    );
+  const handleCellChange = useCallback(
+    (id: string, field: string, value: any) => {
+      setDataSource((prev) => {
+        const updated = prev.map((item) =>
+          item.id === id ? { ...item, [field]: value } : item
+        );
 
-    // 데이터 변경 후 유효성 검사 업데이트
-    setTimeout(() => {
-      const member = dataSource.find((m) => m.id === id);
-      if (member) {
-        const updatedMember = { ...member, [field]: value };
-        const errors = validateMember(updatedMember);
-
-        setValidationErrors((prevErrors) => {
-          const newErrors = { ...prevErrors };
-          if (errors.length > 0) {
-            newErrors[id] = errors;
-          } else {
-            delete newErrors[id];
+        // 편집 중이 아닐 때만 유효성 검사 실행
+        if (!editingKeys.includes(id)) {
+          const member = updated.find((m) => m.id === id);
+          if (member) {
+            const errors = validateMember(member);
+            setValidationErrors((prevErrors) => {
+              const newErrors = { ...prevErrors };
+              if (errors.length > 0) {
+                newErrors[id] = errors;
+              } else {
+                delete newErrors[id];
+              }
+              return newErrors;
+            });
           }
-          return newErrors;
-        });
+        }
+
+        return updated;
+      });
+    },
+    [editingKeys]
+  );
+
+  const EditableCell = useCallback(
+    ({ editing, dataIndex, title, record, children, ...restProps }: any) => {
+      let inputNode;
+
+      switch (dataIndex) {
+        case 'joinedAt':
+          inputNode = (
+            <DatePicker
+              value={record?.[dataIndex] ? dayjs(record[dataIndex]) : dayjs()}
+              onChange={(date) =>
+                handleCellChange(record?.id, dataIndex, date?.toDate())
+              }
+              format="YYYY.MM.DD"
+              style={{ width: '100%' }}
+            />
+          );
+          break;
+        case 'gender':
+          inputNode = (
+            <Select
+              value={record?.[dataIndex]}
+              onChange={(value) =>
+                handleCellChange(record?.id, dataIndex, value)
+              }
+              style={{ width: '100%' }}
+            >
+              <Option value="male">남성</Option>
+              <Option value="female">여성</Option>
+            </Select>
+          );
+          break;
+        case 'birthYear':
+          inputNode = (
+            <InputNumber
+              min={1950}
+              max={new Date().getFullYear()}
+              value={record?.[dataIndex]}
+              onChange={(value) =>
+                handleCellChange(record?.id, dataIndex, value)
+              }
+              style={{ width: '100%' }}
+            />
+          );
+          break;
+        default:
+          inputNode = (
+            <Input
+              value={record?.[dataIndex] || ''}
+              onChange={(e) =>
+                handleCellChange(record?.id, dataIndex, e.target.value)
+              }
+              autoFocus={
+                record?.isNew && dataIndex === 'name' && !record?.[dataIndex]
+              }
+            />
+          );
       }
-    }, 0);
-  };
 
-  const EditableCell = ({
-    editing,
-    dataIndex,
-    title,
-    record,
-    children,
-    ...restProps
-  }: any) => {
-    let inputNode;
-
-    switch (dataIndex) {
-      case 'joinedAt':
-        inputNode = (
-          <DatePicker
-            key={`${record?.id}-${dataIndex}`}
-            value={record?.[dataIndex] ? dayjs(record[dataIndex]) : dayjs()}
-            onChange={(date) =>
-              handleCellChange(record?.id, dataIndex, date?.toDate())
-            }
-            format="YYYY.MM.DD"
-            style={{ width: '100%' }}
-          />
-        );
-        break;
-      case 'gender':
-        inputNode = (
-          <Select
-            key={`${record?.id}-${dataIndex}`}
-            value={record?.[dataIndex]}
-            onChange={(value) => handleCellChange(record?.id, dataIndex, value)}
-            style={{ width: '100%' }}
-          >
-            <Option value="male">남성</Option>
-            <Option value="female">여성</Option>
-          </Select>
-        );
-        break;
-      case 'birthYear':
-        inputNode = (
-          <InputNumber
-            key={`${record?.id}-${dataIndex}`}
-            min={1950}
-            max={new Date().getFullYear()}
-            value={record?.[dataIndex]}
-            onChange={(value) => handleCellChange(record?.id, dataIndex, value)}
-            style={{ width: '100%' }}
-          />
-        );
-        break;
-      default:
-        inputNode = (
-          <Input
-            key={`${record?.id}-${dataIndex}`}
-            value={record?.[dataIndex] || ''}
-            onChange={(e) =>
-              handleCellChange(record?.id, dataIndex, e.target.value)
-            }
-            autoFocus={record?.isNew && !record?.[dataIndex]}
-          />
-        );
-    }
-
-    return <td {...restProps}>{editing ? inputNode : children}</td>;
-  };
+      return <td {...restProps}>{editing ? inputNode : children}</td>;
+    },
+    [handleCellChange]
+  );
 
   const columns = [
     {
@@ -517,7 +533,7 @@ export function OrganizationForm({
       onCancel={handleCancel}
       footer={null}
       width={1000}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form
         form={form}

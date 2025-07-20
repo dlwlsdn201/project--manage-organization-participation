@@ -32,62 +32,72 @@ export function OrganizationList({
     setShowForm(true);
   };
 
-  const handleDeleteOrganization = (id: string) => {
+  const handleDeleteOrganization = async (id: string) => {
     if (window.confirm('정말로 이 조직을 삭제하시겠습니까?')) {
-      deleteOrganization(id);
-      addActivityLog({
-        id: `log_${Date.now()}`,
-        organizationId: id,
-        userId: 'current_user',
-        action: 'organization_deleted',
-        details: '조직이 삭제되었습니다.',
-        timestamp: new Date(),
-      });
+      try {
+        await deleteOrganization(id);
+        await addActivityLog({
+          id: `log_${Date.now()}`,
+          organizationId: id,
+          userId: 'current_user',
+          action: 'organization_deleted',
+          details: '조직이 삭제되었습니다.',
+          timestamp: new Date(),
+        });
+      } catch (error) {
+        console.error('조직 삭제 실패:', error);
+        alert('조직 삭제 중 오류가 발생했습니다.');
+      }
     }
   };
 
-  const handleFormSubmit = (data: Partial<Organization>) => {
-    if (editingOrganization) {
-      const updatedOrganization: Organization = {
-        ...editingOrganization,
-        ...data,
-        updatedAt: new Date(),
-      };
-      updateOrganization(updatedOrganization);
-      addActivityLog({
-        id: `log_${Date.now()}`,
-        organizationId: updatedOrganization.id,
-        userId: 'current_user',
-        action: 'organization_updated',
-        details: `조직 "${updatedOrganization.name}"이 수정되었습니다.`,
-        timestamp: new Date(),
-      });
-    } else {
-      const newOrganization: Organization = {
-        id: `org_${Date.now()}`,
-        name: data.name || '',
-        description: data.description || '',
-        location: data.location || '',
-        type: data.type || 'club',
-        maxMembers: data.maxMembers || 50,
-        currentMembers: 0,
-        settings: data.settings || { participationRule: '제한없음' },
-        createdBy: 'current_user',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      addOrganization(newOrganization);
-      addActivityLog({
-        id: `log_${Date.now()}`,
-        organizationId: newOrganization.id,
-        userId: 'current_user',
-        action: 'organization_created',
-        details: `새 조직 "${newOrganization.name}"이 생성되었습니다.`,
-        timestamp: new Date(),
-      });
+  const handleFormSubmit = async (data: Partial<Organization>) => {
+    try {
+      if (editingOrganization) {
+        const updatedOrganization: Organization = {
+          ...editingOrganization,
+          ...data,
+          updatedAt: new Date(),
+        };
+        await updateOrganization(updatedOrganization);
+        await addActivityLog({
+          id: `log_${Date.now()}`,
+          organizationId: updatedOrganization.id,
+          userId: 'current_user',
+          action: 'organization_updated',
+          details: `조직 "${updatedOrganization.name}"이 수정되었습니다.`,
+          timestamp: new Date(),
+        });
+      } else {
+        const newOrganization: Organization = {
+          id: `org_${Date.now()}`,
+          name: data.name || '',
+          description: data.description || '',
+          location: data.location || '',
+          type: data.type || 'club',
+          maxMembers: data.maxMembers || 50,
+          currentMembers: 0,
+          settings: data.settings || { participationRule: '제한없음' },
+          createdBy: 'current_user',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        const createdOrg = await addOrganization(newOrganization);
+        await addActivityLog({
+          id: `log_${Date.now()}`,
+          organizationId: createdOrg.id,
+          userId: 'current_user',
+          action: 'organization_created',
+          details: `새 조직 "${createdOrg.name}"이 생성되었습니다.`,
+          timestamp: new Date(),
+        });
+      }
+      setShowForm(false);
+      setEditingOrganization(null);
+    } catch (error) {
+      console.error('조직 저장 실패:', error);
+      // 에러 처리는 OrganizationForm에서 이미 처리됨
     }
-    setShowForm(false);
-    setEditingOrganization(null);
   };
 
   const handleFormCancel = () => {

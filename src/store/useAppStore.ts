@@ -11,6 +11,7 @@ import {
   AttendanceStats,
   OrganizationRules,
 } from '../types';
+import { organizationApi, memberApi, activityLogApi } from '../services/api';
 
 interface AppState {
   // 상태
@@ -34,9 +35,9 @@ interface AppState {
 
   // 조직 관련
   setOrganizations: (organizations: Organization[]) => void;
-  addOrganization: (organization: Organization) => void;
-  updateOrganization: (organization: Organization) => void;
-  deleteOrganization: (id: string) => void;
+  addOrganization: (organization: Organization) => Promise<Organization>;
+  updateOrganization: (organization: Organization) => Promise<Organization>;
+  deleteOrganization: (id: string) => Promise<void>;
   selectOrganization: (organization: Organization | null) => void;
 
   // 참여자 관련
@@ -47,9 +48,9 @@ interface AppState {
 
   // 구성원 관련
   setMembers: (members: Member[]) => void;
-  addMember: (member: Member) => void;
-  updateMember: (member: Member) => void;
-  deleteMember: (id: string) => void;
+  addMember: (member: Member) => Promise<Member>;
+  updateMember: (member: Member) => Promise<Member>;
+  deleteMember: (id: string) => Promise<void>;
 
   // 이벤트 관련
   setEvents: (events: Event[]) => void;
@@ -59,7 +60,7 @@ interface AppState {
 
   // 활동 로그 관련
   setActivityLogs: (logs: ActivityLog[]) => void;
-  addActivityLog: (log: ActivityLog) => void;
+  addActivityLog: (log: ActivityLog) => Promise<ActivityLog>;
 
   // 기타
   setLoading: (loading: boolean) => void;
@@ -90,28 +91,54 @@ export const useAppStore = create<AppState>()(
 
       // 조직 액션
       setOrganizations: (organizations) => set({ organizations }),
-      addOrganization: (organization) =>
-        set((state) => ({
-          organizations: [...state.organizations, organization],
-        })),
-      updateOrganization: (organization) =>
-        set((state) => ({
-          organizations: state.organizations.map((org) =>
-            org.id === organization.id ? organization : org
-          ),
-          selectedOrganization:
-            state.selectedOrganization?.id === organization.id
-              ? organization
-              : state.selectedOrganization,
-        })),
-      deleteOrganization: (id) =>
-        set((state) => ({
-          organizations: state.organizations.filter((org) => org.id !== id),
-          selectedOrganization:
-            state.selectedOrganization?.id === id
-              ? null
-              : state.selectedOrganization,
-        })),
+      addOrganization: async (organization) => {
+        try {
+          const newOrg = await organizationApi.create(organization);
+          set((state) => ({
+            organizations: [...state.organizations, newOrg],
+          }));
+          return newOrg;
+        } catch (error) {
+          console.error('조직 생성 실패:', error);
+          throw error;
+        }
+      },
+      updateOrganization: async (organization) => {
+        try {
+          const updatedOrg = await organizationApi.update(
+            organization.id,
+            organization
+          );
+          set((state) => ({
+            organizations: state.organizations.map((org) =>
+              org.id === updatedOrg.id ? updatedOrg : org
+            ),
+            selectedOrganization:
+              state.selectedOrganization?.id === updatedOrg.id
+                ? updatedOrg
+                : state.selectedOrganization,
+          }));
+          return updatedOrg;
+        } catch (error) {
+          console.error('조직 수정 실패:', error);
+          throw error;
+        }
+      },
+      deleteOrganization: async (id) => {
+        try {
+          await organizationApi.delete(id);
+          set((state) => ({
+            organizations: state.organizations.filter((org) => org.id !== id),
+            selectedOrganization:
+              state.selectedOrganization?.id === id
+                ? null
+                : state.selectedOrganization,
+          }));
+        } catch (error) {
+          console.error('조직 삭제 실패:', error);
+          throw error;
+        }
+      },
       selectOrganization: (organization) =>
         set({ selectedOrganization: organization }),
 
@@ -134,18 +161,43 @@ export const useAppStore = create<AppState>()(
 
       // 구성원 액션
       setMembers: (members) => set({ members }),
-      addMember: (member) =>
-        set((state) => ({
-          members: [...state.members, member],
-        })),
-      updateMember: (member) =>
-        set((state) => ({
-          members: state.members.map((m) => (m.id === member.id ? member : m)),
-        })),
-      deleteMember: (id) =>
-        set((state) => ({
-          members: state.members.filter((m) => m.id !== id),
-        })),
+      addMember: async (member) => {
+        try {
+          const newMember = await memberApi.create(member);
+          set((state) => ({
+            members: [...state.members, newMember],
+          }));
+          return newMember;
+        } catch (error) {
+          console.error('구성원 생성 실패:', error);
+          throw error;
+        }
+      },
+      updateMember: async (member) => {
+        try {
+          const updatedMember = await memberApi.update(member.id, member);
+          set((state) => ({
+            members: state.members.map((m) =>
+              m.id === updatedMember.id ? updatedMember : m
+            ),
+          }));
+          return updatedMember;
+        } catch (error) {
+          console.error('구성원 수정 실패:', error);
+          throw error;
+        }
+      },
+      deleteMember: async (id) => {
+        try {
+          await memberApi.delete(id);
+          set((state) => ({
+            members: state.members.filter((m) => m.id !== id),
+          }));
+        } catch (error) {
+          console.error('구성원 삭제 실패:', error);
+          throw error;
+        }
+      },
 
       // 이벤트 액션
       setEvents: (events) => set({ events }),
@@ -164,10 +216,18 @@ export const useAppStore = create<AppState>()(
 
       // 활동 로그 액션
       setActivityLogs: (activityLogs) => set({ activityLogs }),
-      addActivityLog: (log) =>
-        set((state) => ({
-          activityLogs: [log, ...state.activityLogs],
-        })),
+      addActivityLog: async (log) => {
+        try {
+          const newLog = await activityLogApi.create(log);
+          set((state) => ({
+            activityLogs: [newLog, ...state.activityLogs],
+          }));
+          return newLog;
+        } catch (error) {
+          console.error('활동 로그 생성 실패:', error);
+          throw error;
+        }
+      },
 
       // 기타 액션
       setLoading: (loading) => set({ loading }),
