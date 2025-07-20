@@ -67,7 +67,7 @@ export function OrganizationForm({
   const currentMembers = useMemo(
     () =>
       organization
-        ? storeMembers.filter((m) => m.organizationId === organization.id)
+        ? storeMembers.filter((m) => m.organizationId === organization._id)
         : [],
     [organization, storeMembers]
   );
@@ -129,7 +129,16 @@ export function OrganizationForm({
         },
       };
 
-      await onSubmit(orgData);
+      // 구성원 정보도 함께 전달
+      const tempMembers = dataSource.filter((member) => member.isNew);
+      console.log('전달할 구성원 데이터:', tempMembers);
+      const submitData = {
+        ...orgData,
+        members: tempMembers.map(({ isEditing, isNew, ...member }) => member),
+      };
+      console.log('최종 전달 데이터:', submitData);
+
+      await onSubmit(submitData);
       message.success(
         organization ? '조직이 수정되었습니다.' : '조직이 생성되었습니다.'
       );
@@ -215,6 +224,13 @@ export function OrganizationForm({
     return !hasErrors;
   };
 
+  // 저장되지 않은 행이 있는지 확인
+  const hasUnsavedRows = (): boolean => {
+    return dataSource.some(
+      (member) => member.isNew && editingKeys.includes(member.id)
+    );
+  };
+
   const save = useCallback(
     async (id: string) => {
       try {
@@ -240,7 +256,7 @@ export function OrganizationForm({
         if (isNew) {
           const newMember: Member = {
             ...memberData,
-            organizationId: organization?.id || 'temp',
+            organizationId: organization?._id || 'temp',
             status: 'active',
             joinedAt: memberData.joinedAt || new Date(),
             updatedAt: new Date(),
@@ -251,7 +267,9 @@ export function OrganizationForm({
           }
 
           setDataSource((prev) =>
-            prev.map((item) => (item.id === id ? { ...newMember } : item))
+            prev.map((item) =>
+              item.id === id ? { ...newMember, isNew: true } : item
+            )
           );
         } else {
           const updatedMember: Member = {
@@ -295,7 +313,7 @@ export function OrganizationForm({
       gender: 'male',
       birthYear: new Date().getFullYear() - 25,
       district: '',
-      organizationId: organization?.id || 'temp',
+      organizationId: organization?._id || 'temp',
       status: 'active',
       joinedAt: new Date(),
       updatedAt: new Date(),
@@ -703,7 +721,31 @@ export function OrganizationForm({
         )}
 
         <Form.Item style={{ marginBottom: 0, marginTop: 32 }}>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: 12,
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+            }}
+          >
+            {/* 비활성화 이유 안내 */}
+            {(Object.keys(validationErrors).length > 0 || hasUnsavedRows()) && (
+              <div
+                style={{
+                  color: '#ff4d4f',
+                  fontSize: '12px',
+                  marginRight: '12px',
+                }}
+              >
+                {hasUnsavedRows() && (
+                  <span>⚠️ 저장되지 않은 구성원 정보가 있습니다.</span>
+                )}
+                {Object.keys(validationErrors).length > 0 && (
+                  <span>⚠️ 구성원 정보에 오류가 있습니다.</span>
+                )}
+              </div>
+            )}
             <Button size="large" onClick={handleCancel}>
               취소
             </Button>
@@ -712,7 +754,9 @@ export function OrganizationForm({
               htmlType="submit"
               loading={loading}
               size="large"
-              disabled={Object.keys(validationErrors).length > 0}
+              disabled={
+                Object.keys(validationErrors).length > 0 || hasUnsavedRows()
+              }
             >
               {organization ? '수정' : '생성'}
             </Button>

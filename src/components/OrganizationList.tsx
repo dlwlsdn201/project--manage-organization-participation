@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { OrganizationForm } from './OrganizationForm';
-import { Organization } from '../types';
+import { Organization, Member } from '../types';
 import { Edit, Settings, Trash2, Plus, Users } from 'lucide-react';
-import { initialDataApi } from '../services/api';
+import { initialDataApi, organizationApi, memberApi } from '../services/api';
 
 interface OrganizationListProps {
   onEditOrganization: (organization: Organization) => void;
@@ -82,7 +82,9 @@ export function OrganizationList({
     }
   };
 
-  const handleFormSubmit = async (data: Partial<Organization>) => {
+  const handleFormSubmit = async (
+    data: Partial<Organization> & { members?: Member[] }
+  ) => {
     try {
       if (editingOrganization) {
         // 수정 시 중복 이름 확인 (자신 제외)
@@ -122,8 +124,7 @@ export function OrganizationList({
           return;
         }
 
-        const newOrganization: Organization = {
-          _id: `org_${Date.now()}`,
+        const newOrganization: Partial<Organization> = {
           name: data.name || '',
           description: data.description || '',
           location: data.location || '',
@@ -135,7 +136,31 @@ export function OrganizationList({
           createdAt: new Date(),
           updatedAt: new Date(),
         };
-        const createdOrg = await addOrganization(newOrganization);
+        const createdOrg = await organizationApi.create(newOrganization);
+        // 로컬 상태 업데이트
+        setOrganizations([...organizations, createdOrg]);
+
+        // 구성원 정보가 있으면 생성
+        if (data.members && data.members.length > 0) {
+          console.log('구성원 생성 시작:', data.members);
+          const memberPromises = data.members.map(async (member) => {
+            const newMember: Partial<Member> = {
+              ...member,
+              organizationId: createdOrg._id,
+              status: 'active' as const,
+              joinedAt: member.joinedAt || new Date(),
+              updatedAt: new Date(),
+            };
+            console.log('생성할 구성원 데이터:', newMember);
+            return await memberApi.create(newMember);
+          });
+
+          const createdMembers = await Promise.all(memberPromises);
+          console.log('생성된 구성원들:', createdMembers);
+          // 로컬 상태에 구성원 추가
+          setMembers([...members, ...createdMembers]);
+        }
+
         await addActivityLog({
           id: `log_${Date.now()}`,
           organizationId: createdOrg._id,
@@ -180,7 +205,7 @@ export function OrganizationList({
         member.organizationId === organizationId && member.status === 'active'
     ).length;
   };
-  console.log('OrganizationList 렌더링 - organizations:', organizations);
+
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       <div className="flex justify-between items-center p-6 border-b border-slate-200">

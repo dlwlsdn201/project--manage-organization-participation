@@ -106,15 +106,15 @@ export const useAppStore = create<AppState>()(
       updateOrganization: async (organization) => {
         try {
           const updatedOrg = await organizationApi.update(
-            organization.id,
+            organization._id,
             organization
           );
           set((state) => ({
             organizations: state.organizations.map((org) =>
-              org.id === updatedOrg.id ? updatedOrg : org
+              org._id === updatedOrg._id ? updatedOrg : org
             ),
             selectedOrganization:
-              state.selectedOrganization?.id === updatedOrg.id
+              state.selectedOrganization?._id === updatedOrg._id
                 ? updatedOrg
                 : state.selectedOrganization,
           }));
@@ -128,9 +128,9 @@ export const useAppStore = create<AppState>()(
         try {
           await organizationApi.delete(id);
           set((state) => ({
-            organizations: state.organizations.filter((org) => org.id !== id),
+            organizations: state.organizations.filter((org) => org._id !== id),
             selectedOrganization:
-              state.selectedOrganization?.id === id
+              state.selectedOrganization?._id === id
                 ? null
                 : state.selectedOrganization,
           }));
