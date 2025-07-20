@@ -24,7 +24,7 @@ export interface Member {
 
 // 조직 타입
 export interface Organization {
-  id: string;
+  _id: string;
   name: string;
   description: string;
   logo?: string;
@@ -32,6 +32,7 @@ export interface Organization {
   type:
     | 'club'
     | 'study'
+    | 'culture'
     | 'sports'
     | 'volunteer'
     | 'business'

@@ -59,6 +59,22 @@ async function apiCall<T>(
   }
 }
 
+// 페이지네이션 응답을 위한 타입
+interface PaginatedApiResponse<T> {
+  success: boolean;
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+  message?: string;
+  error?: string;
+}
+
 // 조직 관련 API
 export const organizationApi = {
   // 모든 조직 조회
@@ -187,7 +203,7 @@ export const eventApi = {
     }),
 };
 
-// 활동 로그 관련 API (향후 구현)
+// 활동 로그 관련 API
 export const activityLogApi = {
   getAll: () => apiCall<ActivityLog[]>('/logs'),
   getByOrganization: (organizationId: string) =>
@@ -197,4 +213,27 @@ export const activityLogApi = {
       method: 'POST',
       body: JSON.stringify(log),
     }),
+};
+
+// 초기 데이터 로딩 API
+export const initialDataApi = {
+  // 모든 초기 데이터를 한 번에 로드
+  loadAll: async (): Promise<{
+    organizations: Organization[];
+    members: Member[];
+    activityLogs: ActivityLog[];
+  }> => {
+    const [organizationsResponse, membersResponse, activityLogsResponse] =
+      await Promise.all([
+        organizationApi.getAll(),
+        memberApi.getAll(),
+        activityLogApi.getAll(),
+      ]);
+
+    return {
+      organizations: organizationsResponse || [],
+      members: membersResponse || [],
+      activityLogs: activityLogsResponse || [],
+    };
+  },
 };

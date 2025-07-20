@@ -24,7 +24,6 @@ const organizationSchema = new Schema<IOrganization>(
     },
     description: {
       type: String,
-      required: [true, '조직 설명은 필수입니다.'],
       trim: true,
       maxlength: [500, '설명은 최대 500자까지 가능합니다.'],
     },
@@ -44,6 +43,7 @@ const organizationSchema = new Schema<IOrganization>(
         values: [
           'club',
           'study',
+          'culture',
           'sports',
           'volunteer',
           'business',

@@ -129,25 +129,44 @@ export const deleteOrganization = asyncHandler(
   async (req: Request, res: Response<ApiResponse>) => {
     const { id } = req.params;
 
-    // 조직에 속한 구성원이 있는지 확인
+    // 조직에 속한 구성원 수 확인
     const memberCount = await Member.countDocuments({ organizationId: id });
-    if (memberCount > 0) {
-      throw new AppError(
-        '구성원이 있는 조직은 삭제할 수 없습니다. 먼저 모든 구성원을 제거해주세요.',
-        400
-      );
+
+    // 트랜잭션으로 조직과 관련 구성원을 함께 삭제
+    const session = await Organization.startSession();
+    session.startTransaction();
+
+    try {
+      // 관련 구성원 삭제
+      if (memberCount > 0) {
+        await Member.deleteMany({ organizationId: id }, { session });
+      }
+
+      // 조직 삭제
+      const organization = await Organization.findByIdAndDelete(id, {
+        session,
+      });
+
+      if (!organization) {
+        throw new AppError('조직을 찾을 수 없습니다.', 404);
+      }
+
+      await session.commitTransaction();
+
+      res.json({
+        success: true,
+        message: `조직이 성공적으로 삭제되었습니다. (삭제된 구성원: ${memberCount}명)`,
+        data: {
+          deletedOrganization: organization.toJSON(),
+          deletedMembersCount: memberCount,
+        },
+      });
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
     }
-
-    const organization = await Organization.findByIdAndDelete(id);
-
-    if (!organization) {
-      throw new AppError('조직을 찾을 수 없습니다.', 404);
-    }
-
-    res.json({
-      success: true,
-      message: '조직이 성공적으로 삭제되었습니다.',
-    });
   }
 );
 

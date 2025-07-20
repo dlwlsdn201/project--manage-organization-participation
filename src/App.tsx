@@ -4,7 +4,8 @@ import { OrganizationList } from './components/OrganizationList';
 import { EventManager } from './components/EventManager';
 import { AttendanceTracker } from './components/AttendanceTracker';
 import { Organization } from './types';
-import { loadInitialData } from './utils/mockData';
+import { initialDataApi } from './services/api';
+import { message } from 'antd';
 
 type TabType = 'organizations' | 'events' | 'analytics';
 
@@ -13,6 +14,7 @@ function App() {
     user,
     selectedOrganization,
     events,
+    loading,
     setUser,
     setUsers,
     setOrganizations,
@@ -20,6 +22,7 @@ function App() {
     setMembers,
     setEvents,
     setActivityLogs,
+    setLoading,
     selectOrganization,
   } = useAppStore();
 
@@ -27,24 +30,35 @@ function App() {
 
   // 초기 데이터 로드
   useEffect(() => {
-    const initialData = loadInitialData();
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const data = await initialDataApi.loadAll();
+        setOrganizations(data.organizations || []);
+        setMembers(data.members || []);
+        setActivityLogs(data.activityLogs || []);
 
-    setUser(initialData.user);
-    setUsers(initialData.users);
-    setOrganizations(initialData.organizations);
-    setParticipants(initialData.participants);
-    setMembers(initialData.members);
-    setEvents(initialData.events);
-    setActivityLogs(initialData.activityLogs);
-  }, [
-    setUser,
-    setUsers,
-    setOrganizations,
-    setParticipants,
-    setMembers,
-    setEvents,
-    setActivityLogs,
-  ]);
+        // 기본 사용자 설정 (임시)
+        setUser({
+          id: 'current_user',
+          name: '관리자',
+          email: 'admin@example.com',
+          role: 'admin',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        message.success('데이터 로딩이 완료되었습니다.');
+      } catch (error) {
+        console.error('초기 데이터 로딩 실패:', error);
+        message.error('데이터 로딩 중 오류가 발생했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [setUser, setOrganizations, setMembers, setActivityLogs, setLoading]);
 
   const handleEditOrganization = (organization: Organization) => {
     selectOrganization(organization);
@@ -64,7 +78,7 @@ function App() {
             </div>
           );
         }
-        return <EventManager organizationId={selectedOrganization.id} />;
+        return <EventManager organizationId={selectedOrganization._id} />;
 
       case 'analytics':
         if (!selectedOrganization) {
@@ -74,7 +88,7 @@ function App() {
             </div>
           );
         }
-        return <AttendanceTracker organizationId={selectedOrganization.id} />;
+        return <AttendanceTracker organizationId={selectedOrganization._id} />;
 
       default:
         return null;
@@ -127,7 +141,7 @@ function App() {
               <span className="inline-block bg-primary text-white text-xs px-2 py-1 rounded-md ml-2">
                 {
                   events.filter(
-                    (e) => e.organizationId === selectedOrganization?.id
+                    (e) => e.organizationId === selectedOrganization?._id
                   ).length
                 }
               </span>
@@ -163,7 +177,16 @@ function App() {
           </div>
         )}
 
-        <div>{renderTabContent()}</div>
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-slate-600">데이터를 불러오는 중...</p>
+            </div>
+          </div>
+        ) : (
+          <div>{renderTabContent()}</div>
+        )}
       </main>
     </div>
   );

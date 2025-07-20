@@ -3,6 +3,7 @@ import { useAppStore } from '../store/useAppStore';
 import { OrganizationForm } from './OrganizationForm';
 import { Organization } from '../types';
 import { Edit, Settings, Trash2, Plus, Users } from 'lucide-react';
+import { initialDataApi } from '../services/api';
 
 interface OrganizationListProps {
   onEditOrganization: (organization: Organization) => void;
@@ -13,11 +14,15 @@ export function OrganizationList({
 }: OrganizationListProps) {
   const {
     organizations,
+    members,
     addOrganization,
     updateOrganization,
     deleteOrganization,
     addActivityLog,
+    setOrganizations,
+    setMembers,
   } = useAppStore();
+
   const [showForm, setShowForm] = useState(false);
   const [editingOrganization, setEditingOrganization] =
     useState<Organization | null>(null);
@@ -32,8 +37,31 @@ export function OrganizationList({
     setShowForm(true);
   };
 
+  // 데이터 리페치 함수
+  const refetchData = async () => {
+    try {
+      const data = await initialDataApi.loadAll();
+      setOrganizations(data.organizations || []);
+      setMembers(data.members || []);
+    } catch (error) {
+      console.error('데이터 리페치 실패:', error);
+    }
+  };
+
   const handleDeleteOrganization = async (id: string) => {
-    if (window.confirm('정말로 이 조직을 삭제하시겠습니까?')) {
+    console.log('handleDeleteOrganization', id);
+    const organization = organizations.find((org) => org._id === id);
+    if (!organization) return;
+
+    // 구성원이 있는지 확인
+    const memberCount = getMemberCount(organization._id);
+    const hasMembers = memberCount > 0;
+
+    const confirmMessage = hasMembers
+      ? `"${organization.name}" 조직을 삭제하시겠습니까?\n\n⚠️ 주의: 이 조직의 구성원 ${memberCount}명도 함께 삭제됩니다.`
+      : `"${organization.name}" 조직을 삭제하시겠습니까?`;
+
+    if (window.confirm(confirmMessage)) {
       try {
         await deleteOrganization(id);
         await addActivityLog({
@@ -41,9 +69,12 @@ export function OrganizationList({
           organizationId: id,
           userId: 'current_user',
           action: 'organization_deleted',
-          details: '조직이 삭제되었습니다.',
+          details: `조직 "${organization.name}"이 삭제되었습니다. (삭제된 구성원: ${memberCount}명)`,
           timestamp: new Date(),
         });
+
+        // 삭제 후 데이터 리페치
+        await refetchData();
       } catch (error) {
         console.error('조직 삭제 실패:', error);
         alert('조직 삭제 중 오류가 발생했습니다.');
@@ -54,23 +85,45 @@ export function OrganizationList({
   const handleFormSubmit = async (data: Partial<Organization>) => {
     try {
       if (editingOrganization) {
+        // 수정 시 중복 이름 확인 (자신 제외)
+        const isDuplicateName =
+          organizations?.some(
+            (org) =>
+              org.name === data.name && org._id !== editingOrganization._id
+          ) || false;
+
+        if (isDuplicateName) {
+          alert('같은 이름의 조직이 이미 존재합니다.');
+          return;
+        }
+
         const updatedOrganization: Organization = {
           ...editingOrganization,
           ...data,
+          _id: editingOrganization._id,
           updatedAt: new Date(),
         };
         await updateOrganization(updatedOrganization);
         await addActivityLog({
           id: `log_${Date.now()}`,
-          organizationId: updatedOrganization.id,
+          organizationId: updatedOrganization._id,
           userId: 'current_user',
           action: 'organization_updated',
           details: `조직 "${updatedOrganization.name}"이 수정되었습니다.`,
           timestamp: new Date(),
         });
       } else {
+        // 생성 시 중복 이름 확인
+        const isDuplicateName =
+          organizations?.some((org) => org.name === data.name) || false;
+
+        if (isDuplicateName) {
+          alert('같은 이름의 조직이 이미 존재합니다.');
+          return;
+        }
+
         const newOrganization: Organization = {
-          id: `org_${Date.now()}`,
+          _id: `org_${Date.now()}`,
           name: data.name || '',
           description: data.description || '',
           location: data.location || '',
@@ -85,7 +138,7 @@ export function OrganizationList({
         const createdOrg = await addOrganization(newOrganization);
         await addActivityLog({
           id: `log_${Date.now()}`,
-          organizationId: createdOrg.id,
+          organizationId: createdOrg._id,
           userId: 'current_user',
           action: 'organization_created',
           details: `새 조직 "${createdOrg.name}"이 생성되었습니다.`,
@@ -109,6 +162,7 @@ export function OrganizationList({
     const typeMap: { [key: string]: string } = {
       club: '동호회',
       study: '스터디',
+      culture: '문화,취미',
       sports: '스포츠',
       volunteer: '봉사활동',
       business: '비즈니스',
@@ -118,6 +172,15 @@ export function OrganizationList({
     return typeMap[type] || type;
   };
 
+  // 조직별 구성원 수 계산
+  const getMemberCount = (organizationId: string) => {
+    if (!members) return 0;
+    return members.filter(
+      (member) =>
+        member.organizationId === organizationId && member.status === 'active'
+    ).length;
+  };
+  console.log('OrganizationList 렌더링 - organizations:', organizations);
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       <div className="flex justify-between items-center p-6 border-b border-slate-200">
@@ -130,7 +193,7 @@ export function OrganizationList({
         </button>
       </div>
 
-      {organizations.length === 0 ? (
+      {!organizations || organizations.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-slate-600 mb-4">아직 조직이 없습니다.</p>
           <button
@@ -144,7 +207,7 @@ export function OrganizationList({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
           {organizations.map((org) => (
             <div
-              key={org.id}
+              key={org._id}
               className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:-translate-y-1 hover:shadow-xl hover:border-primary transition-all duration-300 cursor-pointer"
               onClick={() => onEditOrganization(org)}
               title={`${org.name} 관리하기`}
@@ -169,7 +232,7 @@ export function OrganizationList({
                 )}
                 <p className="flex items-center gap-2 text-slate-500 text-sm font-medium">
                   <Users size={16} className="text-primary" />
-                  {org.currentMembers}/{org.maxMembers}명
+                  {getMemberCount(org._id)}/{org.maxMembers}명
                 </p>
               </div>
 
@@ -186,7 +249,7 @@ export function OrganizationList({
                 </button>
                 <button
                   className="flex items-center justify-center w-10 h-10 bg-red-500 text-white rounded-lg hover:bg-red-600 hover:scale-105 transition-all duration-200"
-                  onClick={() => handleDeleteOrganization(org.id)}
+                  onClick={() => handleDeleteOrganization(org._id)}
                   title="조직 삭제"
                 >
                   <Trash2 size={16} />

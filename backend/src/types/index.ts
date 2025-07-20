@@ -28,6 +28,7 @@ export interface IOrganization extends BaseDocument {
   type:
     | 'club'
     | 'study'
+    | 'culture'
     | 'sports'
     | 'volunteer'
     | 'business'
