@@ -1,16 +1,27 @@
 {
-  "name": "my-template--react-ts-jest-vite",
+  "name": "organization-participation-management",
+  "version": "1.0.0",
+  "description": "조직 참여 관리 시스템 - 모노레포",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:3000": "vite --port 3000",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "start": "vite preview",
-    "test": "jest",
-    "test:auto": "jest --watch --coverage"
+    "dev": "concurrently \"pnpm run dev:frontend\" \"pnpm run dev:backend\"",
+    "dev:frontend": "cd frontend && pnpm run dev",
+    "dev:backend": "cd backend && pnpm run dev",
+    "build": "pnpm run build:frontend && pnpm run build:backend",
+    "build:frontend": "cd frontend && pnpm run build",
+    "build:backend": "cd backend && pnpm run build",
+    "test": "pnpm run test:frontend && pnpm run test:backend",
+    "test:frontend": "cd frontend && pnpm test",
+    "test:backend": "cd backend && pnpm test",
+    "lint": "pnpm run lint:frontend && pnpm run lint:backend",
+    "lint:frontend": "cd frontend && pnpm run lint",
+    "lint:backend": "cd backend && pnpm run lint",
+    "deploy": "./scripts/deploy.sh",
+    "deploy:frontend": "./scripts/deploy.sh frontend",
+    "deploy:backend": "./scripts/deploy.sh backend",
+    "deploy:all": "./scripts/deploy.sh all",
+    "install:all": "pnpm install && cd frontend && pnpm install && cd ../backend && pnpm install",
+    "clean": "rm -rf frontend/dist backend/dist frontend/node_modules backend/node_modules node_modules"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
@@ -48,6 +59,22 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^5.4.1"
+    "vite": "^5.4.1",
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "organization",
+    "participation",
+    "management",
+    "react",
+    "nodejs",
+    "typescript",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }

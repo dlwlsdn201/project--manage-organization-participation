@@ -111,7 +111,7 @@ const seedData = async () => {
           gender: Math.random() > 0.5 ? 'male' : 'female',
           birthYear: 1985 + Math.floor(Math.random() * 20), // 1985-2004
           district: districts[Math.floor(Math.random() * districts.length)],
-          organizationId: org._id.toString(),
+          organizationId: (org as any)._id.toString(),
           status: 'active',
           joinedAt: new Date(
             Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000
@@ -127,7 +127,7 @@ const seedData = async () => {
     // 조직별 구성원 수 업데이트
     for (const org of organizations) {
       const memberCount = insertedMembers.filter(
-        (member) => member.organizationId === org._id.toString()
+        (member) => member.organizationId === (org as any)._id.toString()
       ).length;
 
       await Organization.findByIdAndUpdate((org as any)._id, {
@@ -164,7 +164,7 @@ const seedData = async () => {
 
     for (const org of organizations) {
       const orgMembers = insertedMembers.filter(
-        (member) => member.organizationId === org._id.toString()
+        (member) => member.organizationId === (org as any)._id.toString()
       );
 
       const eventCount = Math.floor(Math.random() * 15) + 5; // 5-19개 이벤트
@@ -178,10 +178,10 @@ const seedData = async () => {
         const shuffledMembers = [...orgMembers].sort(() => 0.5 - Math.random());
         const attendees = shuffledMembers
           .slice(0, attendeeCount)
-          .map((m) => m._id.toString());
+          .map((m) => (m as any)._id.toString());
 
         events.push({
-          organizationId: org._id.toString(),
+          organizationId: (org as any)._id.toString(),
           title: eventTitles[Math.floor(Math.random() * eventTitles.length)],
           description: '정기적으로 진행되는 모임입니다.',
           date: eventDate,
@@ -203,7 +203,7 @@ const seedData = async () => {
     const logs = [];
     for (const org of organizations) {
       logs.push({
-        organizationId: org._id.toString(),
+        organizationId: (org as any)._id.toString(),
         userId: 'user_seed',
         action: 'organization_created',
         details: `조직 "${org.name}"이 생성되었습니다.`,

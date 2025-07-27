@@ -1,0 +1,135 @@
+name: Deploy to Vercel and Render
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # 프론트엔드 배포 (Vercel)
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: |
+          cd frontend
+          pnpm test
+
+      - name: Build
+        run: |
+          cd frontend
+          pnpm run build
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./frontend
+          vercel-args: '--prod'
+
+  # 백엔드 배포 (Render)
+  deploy-backend:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: |
+          cd backend
+          pnpm test
+
+      - name: Build
+        run: |
+          cd backend
+          pnpm run build
+
+      - name: Deploy to Render
+        env:
+          RENDER_TOKEN: ${{ secrets.RENDER_TOKEN }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+        run: |
+          curl -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_TOKEN }}" \
+            -H "Content-Type: application/json"
+
+  # 테스트 (PR 시)
+  test:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    strategy:
+      matrix:
+        project: [frontend, backend]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: |
+          cd ${{ matrix.project }}
+          pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: |
+          cd ${{ matrix.project }}
+          pnpm test
+
+      - name: Build
+        run: |
+          cd ${{ matrix.project }}
+          pnpm run build
