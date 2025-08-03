@@ -12,7 +12,7 @@ echo "📱 프론트엔드 테스트 중..."
 cd frontend
 
 echo "📦 의존성 설치..."
-pnpm install --frozen-lockfile
+pnpm install
 
 echo "🧪 테스트 실행..."
 pnpm test
@@ -28,7 +28,7 @@ echo "🔧 백엔드 테스트 중..."
 cd backend
 
 echo "📦 의존성 설치..."
-pnpm install --frozen-lockfile
+pnpm install
 
 echo "🧪 테스트 실행..."
 pnpm test
