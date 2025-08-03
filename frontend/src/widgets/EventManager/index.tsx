@@ -4,7 +4,7 @@ import { Event } from '@/entities';
 import { EventForm } from '@/features/EventForm';
 import { ParticipantManager } from '@/features/ParticipantManager';
 import { Edit, Trash2, Plus, Users, Calendar, MapPin } from 'lucide-react';
-import { Modal, message, Popconfirm } from 'antd';
+import { Modal, message, Popconfirm, Badge } from 'antd';
 
 interface EventManagerProps {
   organizationId: string;
@@ -85,7 +85,14 @@ export function EventManager({ organizationId }: EventManagerProps) {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">모임 목록</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-gray-900">모임 목록</h2>
+          <div className="px-3 py-1 bg-primary text-sm font-medium rounded-full flex items-center gap-1">
+            <span>총</span>
+            <Badge count={organizationEvents.length} color="blue" dot={false} />
+            개
+          </div>
+        </div>
         <button
           onClick={handleAddEvent}
           className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"

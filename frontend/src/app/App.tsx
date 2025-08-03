@@ -117,7 +117,7 @@ function App() {
       <main className="flex-1 p-8 w-full">
         <nav className="flex gap-2 mb-8 border-b-2 border-slate-200">
           <button
-            className={`px-6 py-3 font-medium text-base transition-all duration-200 border-b-2 ${
+            className={`px-6 py-3 font-medium text-base transition-all duration-200 border-b-2 flex items-center justify-center ${
               activeTab === 'organizations'
                 ? 'text-primary border-primary bg-slate-50'
                 : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'
@@ -128,26 +128,17 @@ function App() {
           </button>
 
           <button
-            className={`px-6 py-3 font-medium text-base transition-all duration-200 border-b-2 ${
+            className={`px-6 py-3 font-medium text-base transition-all duration-200 border-b-2 flex items-center justify-center ${
               activeTab === 'events'
                 ? 'text-primary border-primary bg-slate-50'
                 : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'
             }`}
             onClick={() => setActiveTab('events')}
           >
-            모임 관리
-            {selectedOrganization && (
-              <span className="inline-block bg-primary text-white text-xs px-2 py-1 rounded-md ml-2">
-                {
-                  events.filter(
-                    (e) => e.organizationId === selectedOrganization?._id
-                  ).length
-                }
-              </span>
-            )}
+            <span className="flex items-center gap-2">모임 관리</span>
           </button>
           <button
-            className={`px-6 py-3 font-medium text-base transition-all duration-200 border-b-2 ${
+            className={`px-6 py-3 font-medium text-base transition-all duration-200 border-b-2 flex items-center justify-center ${
               activeTab === 'analytics'
                 ? 'text-primary border-primary bg-slate-50'
                 : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'
