@@ -13,7 +13,6 @@ function App() {
   const {
     user,
     selectedOrganization,
-    events,
     loading,
     setUser,
     setOrganizations,
