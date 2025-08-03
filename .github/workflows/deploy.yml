@@ -78,11 +78,11 @@ jobs:
 
       - name: Deploy to Render
         env:
-          RENDER_TOKEN: ${{ secrets.RENDER_TOKEN }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
         run: |
           curl -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
-            -H "Authorization: Bearer ${{ secrets.RENDER_TOKEN }}" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
             -H "Content-Type: application/json"
 
   # 테스트 (PR 시)

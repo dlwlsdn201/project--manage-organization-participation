@@ -54,7 +54,7 @@
    - `VERCEL_TOKEN`: Vercel API 토큰
    - `VERCEL_ORG_ID`: Vercel 조직 ID
    - `VERCEL_PROJECT_ID`: Vercel 프로젝트 ID
-   - `RENDER_TOKEN`: Render API 토큰
+   - `RENDER_API_KEY`: Render API 토큰
    - `RENDER_SERVICE_ID`: Render 서비스 ID
 
 ### 2단계: MongoDB Atlas 설정
@@ -212,7 +212,7 @@ app.use(
 
 ```bash
 # Render 로그 확인
-curl -H "Authorization: Bearer $RENDER_TOKEN" \
+curl -H "Authorization: Bearer $RENDER_API_KEY" \
   "https://api.render.com/v1/services/$SERVICE_ID/logs"
 
 # Vercel 로그 확인 (대시보드에서 확인)
@@ -264,7 +264,7 @@ const backupData = async () => {
 
 ```bash
 # Render 로그
-curl -H "Authorization: Bearer $RENDER_TOKEN" \
+curl -H "Authorization: Bearer $RENDER_API_KEY" \
   "https://api.render.com/v1/services/$SERVICE_ID/logs"
 
 # Vercel 로그 (대시보드)

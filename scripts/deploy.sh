@@ -65,13 +65,13 @@ deploy_backend() {
     
     # Render 배포
     echo "🚀 Render에 배포 중..."
-    if [ -n "$RENDER_TOKEN" ] && [ -n "$RENDER_SERVICE_ID" ]; then
+    if [ -n "$RENDER_API_KEY" ] && [ -n "$RENDER_SERVICE_ID" ]; then
         curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
-            -H "Authorization: Bearer $RENDER_TOKEN" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json"
         echo "✅ Render 배포 요청 완료"
     else
-        echo "⚠️  RENDER_TOKEN 또는 RENDER_SERVICE_ID가 설정되지 않았습니다."
+        echo "⚠️  RENDER_API_KEY 또는 RENDER_SERVICE_ID가 설정되지 않았습니다."
         echo "   https://render.com에서 GitHub 저장소를 연결하여 배포하세요."
     fi
     
