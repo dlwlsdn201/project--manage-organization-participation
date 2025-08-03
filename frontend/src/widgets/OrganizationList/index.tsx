@@ -135,7 +135,7 @@ export function OrganizationList({
                     onClick={() => onEditOrganization(organization)}
                     className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                   >
-                    조직 관리하기
+                    모임 관리하기
                   </button>
                 </div>
               </div>
