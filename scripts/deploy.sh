@@ -23,7 +23,7 @@ deploy_frontend() {
     
     # 의존성 설치
     echo "📦 의존성 설치 중..."
-    pnpm install --frozen-lockfile
+    pnpm install
     
     # 테스트 실행
     echo "🧪 테스트 실행 중..."
@@ -53,7 +53,7 @@ deploy_backend() {
     
     # 의존성 설치
     echo "📦 의존성 설치 중..."
-    pnpm install --frozen-lockfile
+    pnpm install
     
     # 테스트 실행
     echo "🧪 테스트 실행 중..."
