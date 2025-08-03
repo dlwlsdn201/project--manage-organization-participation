@@ -50,7 +50,7 @@ export function OrganizationList({
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
           <p className="text-slate-600">데이터를 불러오는 중...</p>
         </div>
       </div>
@@ -63,7 +63,7 @@ export function OrganizationList({
         <h2 className="text-2xl font-bold text-gray-900">조직 목록</h2>
         <button
           onClick={handleAddOrganization}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
         >
           <Plus size={16} />새 조직 추가
         </button>
@@ -100,7 +100,7 @@ export function OrganizationList({
                       setEditingOrganization(organization);
                       setIsModalVisible(true);
                     }}
-                    className="p-2 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
                     title="조직 편집"
                   >
                     <Edit size={16} />

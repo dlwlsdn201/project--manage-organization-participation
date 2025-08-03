@@ -119,7 +119,7 @@ function App() {
           <button
             className={`px-6 py-3 font-medium text-base transition-all duration-200 border-b-2 flex items-center justify-center ${
               activeTab === 'organizations'
-                ? 'text-primary border-primary bg-slate-50'
+                ? 'text-primary-600 border-primary-600 bg-slate-50'
                 : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'
             }`}
             onClick={() => setActiveTab('organizations')}
@@ -130,7 +130,7 @@ function App() {
           <button
             className={`px-6 py-3 font-medium text-base transition-all duration-200 border-b-2 flex items-center justify-center ${
               activeTab === 'events'
-                ? 'text-primary border-primary bg-slate-50'
+                ? 'text-primary-600 border-primary-600 bg-slate-50'
                 : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'
             }`}
             onClick={() => setActiveTab('events')}
@@ -140,7 +140,7 @@ function App() {
           <button
             className={`px-6 py-3 font-medium text-base transition-all duration-200 border-b-2 flex items-center justify-center ${
               activeTab === 'analytics'
-                ? 'text-primary border-primary bg-slate-50'
+                ? 'text-primary-600 border-primary-600 bg-slate-50'
                 : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'
             }`}
             onClick={() => setActiveTab('analytics')}
@@ -170,7 +170,7 @@ function App() {
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
               <p className="text-slate-600">데이터를 불러오는 중...</p>
             </div>
           </div>

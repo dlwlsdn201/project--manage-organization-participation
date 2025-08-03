@@ -75,7 +75,7 @@ export function EventManager({ organizationId }: EventManagerProps) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
           <p className="text-slate-600">데이터를 불러오는 중...</p>
         </div>
       </div>
@@ -87,7 +87,7 @@ export function EventManager({ organizationId }: EventManagerProps) {
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-bold text-gray-900">모임 목록</h2>
-          <div className="px-3 py-1 bg-primary text-sm font-medium rounded-full flex items-center gap-1">
+          <div className="px-3 py-1 text-sm font-medium flex items-center gap-1">
             <span>총</span>
             <Badge count={organizationEvents.length} color="blue" dot={false} />
             개
@@ -95,7 +95,7 @@ export function EventManager({ organizationId }: EventManagerProps) {
         </div>
         <button
           onClick={handleAddEvent}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
         >
           <Plus size={16} />새 모임 추가
         </button>
@@ -129,7 +129,7 @@ export function EventManager({ organizationId }: EventManagerProps) {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEditEvent(event)}
-                    className="p-2 text-gray-600 hover:text-primary hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
                     title="모임 편집"
                   >
                     <Edit size={16} />
