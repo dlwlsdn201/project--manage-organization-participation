@@ -39,7 +39,9 @@ interface AppState {
 
   // 구성원 관련
   setMembers: (members: Member[]) => void;
-  addMember: (member: Member) => Promise<Member>;
+  addMember: (
+    member: Omit<Member, '_id' | 'joinedAt' | 'updatedAt'>
+  ) => Promise<Member>;
   updateMember: (member: Member) => Promise<Member>;
   deleteMember: (id: string) => Promise<void>;
 

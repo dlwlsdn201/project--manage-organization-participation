@@ -150,7 +150,7 @@ export function OrganizationList({
         onOk={handleModalOk}
         onCancel={handleModalCancel}
         footer={null}
-        width={600}
+        style={{ minWidth: '60vw' }}
       >
         <OrganizationForm
           organization={editingOrganization}

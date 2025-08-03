@@ -90,22 +90,6 @@ export function ParticipantManager({
       dataIndex: 'district',
       key: 'district',
     },
-    {
-      title: '상태',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs ${
-            status === 'active'
-              ? 'bg-green-100 text-green-800'
-              : 'bg-gray-100 text-gray-800'
-          }`}
-        >
-          {status === 'active' ? '활성' : '비활성'}
-        </span>
-      ),
-    },
   ];
 
   if (!event) {
