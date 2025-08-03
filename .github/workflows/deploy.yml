@@ -28,19 +28,13 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: |
-          cd frontend
-          pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Run tests
-        run: |
-          cd frontend
-          pnpm test
+        run: pnpm --filter frontend test
 
       - name: Build
-        run: |
-          cd frontend
-          pnpm run build
+        run: pnpm --filter frontend build
 
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
@@ -72,19 +66,13 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: |
-          cd backend
-          pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Run tests
-        run: |
-          cd backend
-          pnpm test
+        run: pnpm --filter backend test
 
       - name: Build
-        run: |
-          cd backend
-          pnpm run build
+        run: pnpm --filter backend build
 
       - name: Deploy to Render
         env:
@@ -120,16 +108,10 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: |
-          cd ${{ matrix.project }}
-          pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Run tests
-        run: |
-          cd ${{ matrix.project }}
-          pnpm test
+        run: pnpm --filter ${{ matrix.project }} test
 
       - name: Build
-        run: |
-          cd ${{ matrix.project }}
-          pnpm run build
+        run: pnpm --filter ${{ matrix.project }} build
