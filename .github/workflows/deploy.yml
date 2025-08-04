@@ -56,7 +56,7 @@ jobs:
           echo "Package.json:"
           cat package.json
           echo "Deploying to Vercel..."
-          vercel --prod --yes --token $VERCEL_TOKEN --debug
+          vercel --prod --yes --token $VERCEL_TOKEN --debug --cwd . --scope $VERCEL_ORG_ID --force
 
   # 백엔드 배포 (Render)
   deploy-backend:
