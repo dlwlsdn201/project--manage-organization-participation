@@ -3,6 +3,11 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "installCommand": "pnpm install",
+  "functions": {
+    "app/api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",
