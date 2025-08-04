@@ -1,7 +1,8 @@
 // Shared API layer - 공통 API 함수들
 import { Organization, Member, Event, ActivityLog } from '../../entities';
 
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
 // API 응답 타입
 export interface ApiResponse<T> {
