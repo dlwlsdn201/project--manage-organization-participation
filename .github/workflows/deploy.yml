@@ -48,13 +48,6 @@ jobs:
           VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
         run: |
           cd frontend
-          echo "Current working directory: $(pwd)"
-          echo "Directory contents:"
-          ls -la
-          echo "Vercel config file:"
-          cat vercel.json
-          echo "Package.json:"
-          cat package.json
           echo "Deploying to Vercel..."
           vercel --prod --yes --token $VERCEL_TOKEN --debug --cwd . --scope $VERCEL_ORG_ID --force
 
