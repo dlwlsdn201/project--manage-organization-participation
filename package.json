@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "조직 참여 관리 시스템 - 모노레포",
   "private": true,
-  "packageManager": "pnpm@9.11.0",
+  "packageManager": "pnpm@10",
   "scripts": {
     "dev": "concurrently \"pnpm run dev:frontend\" \"pnpm run dev:backend\"",
     "dev:frontend": "cd frontend && pnpm run dev",
@@ -75,7 +75,7 @@
   "author": "",
   "license": "MIT",
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
   }
 }
