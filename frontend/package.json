@@ -11,7 +11,8 @@
     "start": "vite preview",
     "test": "jest",
     "test:auto": "jest --watch --coverage",
-    "vercel-build": "pnpm run build"
+    "vercel-build": "pnpm run build",
+    "postinstall": "pnpm run build"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
@@ -54,5 +55,8 @@
     "node": "20.x",
     "pnpm": "10.x"
   },
-  "packageManager": "pnpm@10"
+  "packageManager": "pnpm@10",
+  "overrides": {
+    "pnpm": "10.x"
+  }
 }

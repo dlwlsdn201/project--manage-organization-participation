@@ -1,8 +1,8 @@
 {
-  "buildCommand": "pnpm run build",
+  "buildCommand": "chmod +x ./vercel-build.sh && ./vercel-build.sh",
   "outputDirectory": "dist",
   "framework": "vite",
-  "installCommand": "pnpm install",
+  "installCommand": "echo 'Installation handled by build script'",
   "rewrites": [
     {
       "source": "/(.*)",
