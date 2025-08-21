@@ -3,11 +3,6 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "installCommand": "pnpm install",
-  "functions": {
-    "**/*.js": {
-      "runtime": "nodejs20.x"
-    }
-  },
   "rewrites": [
     {
       "source": "/(.*)",
