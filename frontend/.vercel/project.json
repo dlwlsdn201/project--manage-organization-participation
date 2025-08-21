@@ -1,0 +1,11 @@
+{
+  "projectId": "your-project-id",
+  "orgId": "your-org-id",
+  "settings": {
+    "framework": "vite",
+    "buildCommand": "npm install -g pnpm@10.14.0 && pnpm install --frozen-lockfile && pnpm run build",
+    "outputDirectory": "dist",
+    "installCommand": "echo 'Installation handled by build command'",
+    "nodeVersion": "20.x"
+  }
+}

@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "start": "vite preview",
     "test": "jest",
-    "test:auto": "jest --watch --coverage"
+    "test:auto": "jest --watch --coverage",
+    "vercel-build": "npm install -g pnpm@10.14.0 && pnpm install --frozen-lockfile && pnpm run build"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
