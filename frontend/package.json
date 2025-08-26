@@ -11,7 +11,7 @@
     "start": "vite preview",
     "test": "jest",
     "test:auto": "jest --watch --coverage",
-    "vercel-build": "npm install -g pnpm@10.14.0 && pnpm install --frozen-lockfile && pnpm run build"
+    "vercel-build": "pnpm run build"
   },
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
@@ -52,7 +52,7 @@
   },
   "engines": {
     "node": "20.19.4",
-    "pnpm": "10.14.0"
+    "pnpm": "10.8.0"
   },
-  "packageManager": "pnpm@10.14.0"
+  "packageManager": "pnpm@10.8.0"
 }
