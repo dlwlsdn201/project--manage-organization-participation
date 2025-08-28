@@ -49,7 +49,6 @@ export function OrganizationForm({
 
   // 기존 구성원 + 새로 추가할 구성원들을 합친 데이터
   const allMembers = [
-    ...organizationMembers,
     ...newMembers.map((member, index) => ({
       ...member,
       _id: `new-${index}`, // 임시 ID
@@ -58,6 +57,7 @@ export function OrganizationForm({
       createdAt: new Date(),
       updatedAt: new Date(),
     })),
+    ...organizationMembers,
   ];
 
   useEffect(() => {
@@ -152,6 +152,9 @@ export function OrganizationForm({
     setEditingRowKeys((prev) => prev.filter((k) => k !== key));
   };
 
+  /**
+   * @description 인라인 편집 필드 변경 함수
+   */
   const handleInlineFieldChange = (
     key: string,
     field: keyof Member,
@@ -547,6 +550,10 @@ export function OrganizationForm({
       ),
     });
   }
+
+  useEffect(() => {
+    console.log(allMembers);
+  }, []);
 
   return (
     <div>
