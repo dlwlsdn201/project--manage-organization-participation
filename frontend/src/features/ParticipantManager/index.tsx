@@ -11,12 +11,12 @@ interface ParticipantManagerProps {
   onCancel: () => void;
 }
 
-export function ParticipantManager({
+export const ParticipantManager = ({
   eventId,
   organizationId,
   onSuccess,
   onCancel,
-}: ParticipantManagerProps) {
+}: ParticipantManagerProps) => {
   const { events, members, updateEvent } = useAppStore();
   const [loading, setLoading] = useState(false);
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
@@ -133,4 +133,4 @@ export function ParticipantManager({
       />
     </div>
   );
-}
+};

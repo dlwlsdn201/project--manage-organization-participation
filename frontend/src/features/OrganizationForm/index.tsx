@@ -13,6 +13,7 @@ import {
   Popconfirm,
 } from 'antd';
 import { Plus, Trash2 } from 'lucide-react';
+import { validateMembersData } from './util/validate';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -23,11 +24,11 @@ interface OrganizationFormProps {
   onCancel: () => void;
 }
 
-export function OrganizationForm({
+export const OrganizationForm = ({
   organization,
   onSuccess,
   onCancel,
-}: OrganizationFormProps) {
+}: OrganizationFormProps) => {
   const [form] = Form.useForm();
   const {
     createOrganization,
@@ -40,7 +41,8 @@ export function OrganizationForm({
 
   const [memberLoading, setMemberLoading] = useState(false);
   const [newMembers, setNewMembers] = useState<Partial<Member>[]>([]);
-  const [editingRowKeys, setEditingRowKeys] = useState<string[]>([]);
+  // const [editingRowKeys, setEditingRowKeys] = useState<string[]>([]);
+  const [completedAll, setCompletedAll] = useState(false);
 
   const isEditing = !!organization;
   const organizationMembers = organization
@@ -104,7 +106,6 @@ export function OrganizationForm({
       district: '',
     };
     setNewMembers((prev) => [...prev, newMember]);
-    setEditingRowKeys((prev) => [...prev, `new-${newMembers.length}`]);
   };
 
   const handleSaveInlineRow = async (key: string) => {
@@ -132,14 +133,12 @@ export function OrganizationForm({
 
         // 새 구성원 목록에서 제거
         setNewMembers((prev) => prev.filter((_, i) => i !== index));
-        setEditingRowKeys((prev) => prev.filter((k) => k !== key));
         message.success('구성원이 추가되었습니다.');
       } catch (error) {
         message.error('구성원 추가 중 오류가 발생했습니다.');
       }
     } else {
       // 기존 구성원 수정 로직은 기존과 동일
-      setEditingRowKeys((prev) => prev.filter((k) => k !== key));
     }
   };
 
@@ -149,7 +148,6 @@ export function OrganizationForm({
       const index = parseInt(key.replace('new-', ''));
       setNewMembers((prev) => prev.filter((_, i) => i !== index));
     }
-    setEditingRowKeys((prev) => prev.filter((k) => k !== key));
   };
 
   /**
@@ -175,7 +173,7 @@ export function OrganizationForm({
     if (!organization || newMembers.length === 0) return;
 
     // 현재 편집 중인 행이 있는지 확인
-    if (editingRowKeys.length > 0) {
+    if (!completedAll) {
       message.warning(
         '편집 중인 행이 있습니다. 먼저 개별 저장하거나 취소해주세요.'
       );
@@ -215,7 +213,6 @@ export function OrganizationForm({
       }
 
       setNewMembers([]);
-      setEditingRowKeys([]);
       message.success(`${validMembers.length}명의 구성원이 추가되었습니다.`);
     } catch (error) {
       message.error('구성원 추가 중 오류가 발생했습니다.');
@@ -233,13 +230,23 @@ export function OrganizationForm({
     }
   };
 
+  const checkValidMemberInputData = () => {
+    if (validateMembersData(newMembers)) {
+      setCompletedAll(true);
+    } else setCompletedAll(false);
+  };
+
+  useEffect(() => {
+    checkValidMemberInputData();
+  }, [newMembers]);
+
   const memberColumns = [
     {
       title: '이름',
       dataIndex: 'name',
       key: 'name',
       render: (_: any, record: any) => {
-        const isEditing = editingRowKeys.includes(record._id);
+        const isEditing = !completedAll;
         const isNewMember = record._id.startsWith('new-');
 
         if (isEditing) {
@@ -262,7 +269,7 @@ export function OrganizationForm({
       dataIndex: 'gender',
       key: 'gender',
       render: (_: any, record: any) => {
-        const isEditing = editingRowKeys.includes(record._id);
+        const isEditing = !completedAll;
 
         if (isEditing) {
           return (
@@ -287,7 +294,7 @@ export function OrganizationForm({
       dataIndex: 'birthYear',
       key: 'birthYear',
       render: (_: any, record: any) => {
-        const isEditing = editingRowKeys.includes(record._id);
+        const isEditing = !completedAll;
         const isNewMember = record._id.startsWith('new-');
 
         if (isEditing) {
@@ -318,7 +325,7 @@ export function OrganizationForm({
       dataIndex: 'district',
       key: 'district',
       render: (_: any, record: any) => {
-        const isEditing = editingRowKeys.includes(record._id);
+        const isEditing = !completedAll;
         const isNewMember = record._id.startsWith('new-');
 
         if (isEditing) {
@@ -365,7 +372,7 @@ export function OrganizationForm({
       title: '작업',
       key: 'actions',
       render: (_: any, record: any) => {
-        const isEditing = editingRowKeys.includes(record._id);
+        const isEditing = !completedAll;
         const isNewMember = record._id.startsWith('new-');
 
         if (isEditing) {
@@ -509,6 +516,7 @@ export function OrganizationForm({
                 <Button
                   type="primary"
                   loading={memberLoading}
+                  disabled={!completedAll}
                   onClick={handleSaveAllNewMembers}
                 >
                   모두 저장 ({newMembers.length}명)
@@ -560,4 +568,4 @@ export function OrganizationForm({
       <Tabs items={tabItems} />
     </div>
   );
-}
+};
