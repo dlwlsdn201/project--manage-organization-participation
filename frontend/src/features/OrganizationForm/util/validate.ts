@@ -1,4 +1,3 @@
-import { Member } from '@/entities';
 import { InitialMember } from '@/entities/member/index';
 
 /**
