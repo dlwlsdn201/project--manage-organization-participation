@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useAppStore } from '../../store/useAppStore';
-import { Organization, Member } from '../../entities';
+import { useAppStore } from '@/store/useAppStore';
+import { Organization, Member } from '@/entities';
 import {
   Button,
   Form,
@@ -13,7 +13,9 @@ import {
   Popconfirm,
 } from 'antd';
 import { Plus, Trash2 } from 'lucide-react';
-import { validateMembersData } from './util/validate';
+import { validateMembersData } from '@/features/OrganizationForm/util/validate';
+import { sortMembers } from '@/features/OrganizationForm/util/sort';
+import { InitialMember } from '@/entities/member/index';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -40,17 +42,16 @@ export const OrganizationForm = ({
   const [loading, setLoading] = useState(false);
 
   const [memberLoading, setMemberLoading] = useState(false);
-  const [newMembers, setNewMembers] = useState<Partial<Member>[]>([]);
+  const [newMembers, setNewMembers] = useState<InitialMember[]>([]);
   // const [editingRowKeys, setEditingRowKeys] = useState<string[]>([]);
-  const [completedAll, setCompletedAll] = useState(false);
+  const [editing, setEditing] = useState(false);
 
-  const isEditing = !!organization;
   const organizationMembers = organization
     ? members.filter((m) => m.organizationId === organization._id)
     : [];
 
   // 기존 구성원 + 새로 추가할 구성원들을 합친 데이터
-  const allMembers = [
+  const allMembers = sortMembers([
     ...newMembers.map((member, index) => ({
       ...member,
       _id: `new-${index}`, // 임시 ID
@@ -60,7 +61,7 @@ export const OrganizationForm = ({
       updatedAt: new Date(),
     })),
     ...organizationMembers,
-  ];
+  ]);
 
   useEffect(() => {
     if (organization) {
@@ -77,8 +78,9 @@ export const OrganizationForm = ({
 
   const handleSubmit = async (values: any) => {
     setLoading(true);
+
     try {
-      if (isEditing && organization) {
+      if (!!organization) {
         await updateOrganization(organization._id, values);
         message.success('조직이 수정되었습니다.');
       } else {
@@ -99,7 +101,7 @@ export const OrganizationForm = ({
 
   // 인라인 편집 함수들
   const handleAddNewRow = () => {
-    const newMember: Partial<Member> = {
+    const newMember: InitialMember = {
       name: '',
       gender: 'male',
       birthYear: new Date().getFullYear() - 20, // 기본값: 20세
@@ -128,7 +130,6 @@ export const OrganizationForm = ({
           birthYear: memberData.birthYear!,
           district: memberData.district!,
           organizationId: organization._id,
-          status: 'active', // 기본값으로 활성 상태
         });
 
         // 새 구성원 목록에서 제거
@@ -173,7 +174,7 @@ export const OrganizationForm = ({
     if (!organization || newMembers.length === 0) return;
 
     // 현재 편집 중인 행이 있는지 확인
-    if (!completedAll) {
+    if (!checkValidMemberInputData()) {
       message.warning(
         '편집 중인 행이 있습니다. 먼저 개별 저장하거나 취소해주세요.'
       );
@@ -208,7 +209,6 @@ export const OrganizationForm = ({
           birthYear: memberData.birthYear!,
           district: memberData.district!,
           organizationId: organization._id,
-          status: 'active', // 기본값으로 활성 상태
         });
       }
 
@@ -232,12 +232,20 @@ export const OrganizationForm = ({
 
   const checkValidMemberInputData = () => {
     if (validateMembersData(newMembers)) {
-      setCompletedAll(true);
-    } else setCompletedAll(false);
+      setEditing(false);
+      return true;
+    } else {
+      setEditing(true);
+      return false;
+    }
   };
 
   useEffect(() => {
-    checkValidMemberInputData();
+    if (newMembers.length === 0) {
+      setEditing(false);
+    } else {
+      setEditing(true);
+    }
   }, [newMembers]);
 
   const memberColumns = [
@@ -245,11 +253,10 @@ export const OrganizationForm = ({
       title: '이름',
       dataIndex: 'name',
       key: 'name',
-      render: (_: any, record: any) => {
-        const isEditing = !completedAll;
+      render: (_: unknown, record: Member) => {
         const isNewMember = record._id.startsWith('new-');
 
-        if (isEditing) {
+        if (editing) {
           return (
             <Input
               placeholder="이름을 입력하세요"
@@ -268,10 +275,8 @@ export const OrganizationForm = ({
       title: '성별',
       dataIndex: 'gender',
       key: 'gender',
-      render: (_: any, record: any) => {
-        const isEditing = !completedAll;
-
-        if (isEditing) {
+      render: (_: unknown, record: Member) => {
+        if (editing) {
           return (
             <Select
               defaultValue={record.gender || 'male'}
@@ -293,11 +298,10 @@ export const OrganizationForm = ({
       title: '출생년도',
       dataIndex: 'birthYear',
       key: 'birthYear',
-      render: (_: any, record: any) => {
-        const isEditing = !completedAll;
+      render: (_: unknown, record: Member) => {
         const isNewMember = record._id.startsWith('new-');
 
-        if (isEditing) {
+        if (editing) {
           return (
             <Input
               type="number"
@@ -324,11 +328,10 @@ export const OrganizationForm = ({
       title: '지역',
       dataIndex: 'district',
       key: 'district',
-      render: (_: any, record: any) => {
-        const isEditing = !completedAll;
+      render: (_: unknown, record: Member) => {
         const isNewMember = record._id.startsWith('new-');
 
-        if (isEditing) {
+        if (editing) {
           return (
             <Input
               placeholder="지역을 입력하세요"
@@ -350,7 +353,9 @@ export const OrganizationForm = ({
     {
       title: '나이',
       key: 'age',
-      render: (_: any, record: any) => {
+      sorter: (a: Member, b: Member) =>
+        new Date(a.joinedAt).getTime() - new Date(b.joinedAt).getTime(),
+      render: (_: unknown, record: Member) => {
         if (record.birthYear) {
           const age = new Date().getFullYear() - record.birthYear + 1;
           return `${age}세`;
@@ -362,7 +367,9 @@ export const OrganizationForm = ({
       title: '가입일',
       dataIndex: 'joinedAt',
       key: 'joinedAt',
-      render: (date: Date, record: any) => {
+      sorter: (a: Member, b: Member) =>
+        new Date(a.joinedAt).getTime() - new Date(b.joinedAt).getTime(),
+      render: (date: Date, record: Member) => {
         const isNewMember = record._id.startsWith('new-');
         if (isNewMember) return '오늘';
         return new Date(date).toLocaleDateString();
@@ -371,11 +378,10 @@ export const OrganizationForm = ({
     {
       title: '작업',
       key: 'actions',
-      render: (_: any, record: any) => {
-        const isEditing = !completedAll;
+      render: (_: unknown, record: Member) => {
         const isNewMember = record._id.startsWith('new-');
 
-        if (isEditing) {
+        if (editing) {
           return (
             <Space>
               <Button
@@ -485,7 +491,7 @@ export const OrganizationForm = ({
           <div className="flex justify-end gap-2 pt-4">
             <Button onClick={onCancel}>취소</Button>
             <Button type="primary" htmlType="submit" loading={loading}>
-              {isEditing ? '수정' : '생성'}
+              {!!organization ? '수정' : '생성'}
             </Button>
           </div>
         </Form>
@@ -494,7 +500,7 @@ export const OrganizationForm = ({
   ];
 
   // 수정 모드일 때만 구성원 관리 탭 추가
-  if (isEditing && organization) {
+  if (organization) {
     tabItems.push({
       key: 'members',
       label: `구성원 관리 (${allMembers.length})`,
@@ -516,10 +522,9 @@ export const OrganizationForm = ({
                 <Button
                   type="primary"
                   loading={memberLoading}
-                  disabled={!completedAll}
                   onClick={handleSaveAllNewMembers}
                 >
-                  모두 저장 ({newMembers.length}명)
+                  모두 저장
                 </Button>
               )}
             </Space>
@@ -558,10 +563,6 @@ export const OrganizationForm = ({
       ),
     });
   }
-
-  useEffect(() => {
-    console.log(allMembers);
-  }, []);
 
   return (
     <div>
