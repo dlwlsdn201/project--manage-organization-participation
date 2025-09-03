@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useAppStore } from '../../store/useAppStore';
-import { Organization } from '../../entities';
-import { OrganizationForm } from '../../features/OrganizationForm';
+import { useAppStore } from '@/store/useAppStore';
+import { Organization } from '@/entities';
+import { OrganizationForm } from '@/features/organization';
 import { Edit, Trash2, Plus, Users } from 'lucide-react';
 import { Modal, message } from 'antd';
 

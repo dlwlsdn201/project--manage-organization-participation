@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { OrganizationList } from '../widgets/OrganizationList';
+import { OrganizationList } from '../widgets/organization';
 import { EventManager } from '../widgets/EventManager';
 import { AttendanceTracker } from '../widgets/AttendanceTracker';
 import { Organization } from '../entities/organization';
