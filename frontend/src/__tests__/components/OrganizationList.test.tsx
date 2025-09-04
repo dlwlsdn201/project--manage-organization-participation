@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { OrganizationList } from '../../widgets/OrganizationList';
+import { OrganizationList } from '../../widgets/organization';
 import { useAppStore } from '../../store/useAppStore';
 
 jest.mock('../../store/useAppStore');

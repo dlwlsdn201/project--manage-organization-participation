@@ -1,21 +1,25 @@
 import { Button, Input, Select, Space, Popconfirm } from 'antd';
-import { Trash2 } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 import { Member } from '@/entities';
 
 const { Option } = Select;
 
 interface TableColumnConfig {
   editing: boolean;
+  editedMembers: Map<string, Partial<Member>>;
   onFieldChange: (key: string, field: keyof Member, value: any) => void;
   onSaveRow: (key: string) => void;
+  onEditRow: (key: string) => void;
   onCancelEdit: (key: string) => void;
   onDeleteMember: (memberId: string) => void;
 }
 
 export const createMemberColumns = ({
   editing,
+  editedMembers,
   onFieldChange,
   onSaveRow,
+  onEditRow,
   onCancelEdit,
   onDeleteMember,
 }: TableColumnConfig) => [
@@ -25,8 +29,9 @@ export const createMemberColumns = ({
     key: 'name',
     render: (_: unknown, record: Member) => {
       const isNewMember = record._id.startsWith('new-');
+      const isBeingEdited = isNewMember || editedMembers.has(record._id);
 
-      if (editing) {
+      if (editing && isBeingEdited) {
         return (
           <Input
             placeholder="이름을 입력하세요"
@@ -44,7 +49,10 @@ export const createMemberColumns = ({
     dataIndex: 'gender',
     key: 'gender',
     render: (_: unknown, record: Member) => {
-      if (editing) {
+      const isNewMember = record._id.startsWith('new-');
+      const isBeingEdited = isNewMember || editedMembers.has(record._id);
+
+      if (editing && isBeingEdited) {
         return (
           <Select
             defaultValue={record.gender || 'male'}
@@ -66,8 +74,9 @@ export const createMemberColumns = ({
     key: 'birthYear',
     render: (_: unknown, record: Member) => {
       const isNewMember = record._id.startsWith('new-');
+      const isBeingEdited = isNewMember || editedMembers.has(record._id);
 
-      if (editing) {
+      if (editing && isBeingEdited) {
         return (
           <Input
             type="number"
@@ -96,8 +105,9 @@ export const createMemberColumns = ({
     key: 'district',
     render: (_: unknown, record: Member) => {
       const isNewMember = record._id.startsWith('new-');
+      const isBeingEdited = isNewMember || editedMembers.has(record._id);
 
-      if (editing) {
+      if (editing && isBeingEdited) {
         return (
           <Input
             placeholder="지역을 입력하세요"
@@ -144,8 +154,9 @@ export const createMemberColumns = ({
     key: 'actions',
     render: (_: unknown, record: Member) => {
       const isNewMember = record._id.startsWith('new-');
+      const isBeingEdited = isNewMember || editedMembers.has(record._id);
 
-      if (editing) {
+      if (editing && isBeingEdited) {
         return (
           <Space>
             <Button
@@ -165,14 +176,22 @@ export const createMemberColumns = ({
       return (
         <Space>
           {!isNewMember && (
-            <Popconfirm
-              title="구성원을 삭제하시겠습니까?"
-              onConfirm={() => onDeleteMember(record._id)}
-              okText="삭제"
-              cancelText="취소"
-            >
-              <Button size="small" danger icon={<Trash2 size={14} />} />
-            </Popconfirm>
+            <>
+              <Button
+                size="small"
+                type="default"
+                icon={<Edit size={14} />}
+                onClick={() => onEditRow(record._id)}
+              />
+              <Popconfirm
+                title="구성원을 삭제하시겠습니까?"
+                onConfirm={() => onDeleteMember(record._id)}
+                okText="삭제"
+                cancelText="취소"
+              >
+                <Button size="small" danger icon={<Trash2 size={14} />} />
+              </Popconfirm>
+            </>
           )}
         </Space>
       );

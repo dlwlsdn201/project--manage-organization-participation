@@ -9,8 +9,10 @@ interface MemberTableProps {
   newMembersCount: number;
   editing: boolean;
   memberLoading: boolean;
+  editedMembers: Map<string, Partial<Member>>;
   onAddNewRow: () => void;
-  onSaveAllNewMembers: () => void;
+  onEditRow: (memberId: string) => void;
+  onSaveAll: () => void;
   onFieldChange: (key: string, field: keyof Member, value: any) => void;
   onSaveRow: (key: string) => void;
   onCancelEdit: (key: string) => void;
@@ -23,8 +25,10 @@ export const MemberTable = ({
   newMembersCount,
   editing,
   memberLoading,
+  editedMembers,
   onAddNewRow,
-  onSaveAllNewMembers,
+  onEditRow,
+  onSaveAll,
   onFieldChange,
   onSaveRow,
   onCancelEdit,
@@ -32,8 +36,10 @@ export const MemberTable = ({
 }: MemberTableProps) => {
   const memberColumns = createMemberColumns({
     editing,
+    editedMembers,
     onFieldChange,
     onSaveRow,
+    onEditRow,
     onCancelEdit,
     onDeleteMember,
   });
@@ -49,14 +55,20 @@ export const MemberTable = ({
           </span>
         </h3>
         <Space>
-          <Button icon={<Plus size={16} />} onClick={onAddNewRow}>
-            신규 추가
-          </Button>
-          {newMembersCount > 0 && (
+          {!editing ? (
+            <Button
+              icon={<Plus size={16} />}
+              type="primary"
+              onClick={onAddNewRow}
+            >
+              신규 추가
+            </Button>
+          ) : (
             <Button
               type="primary"
               loading={memberLoading}
-              onClick={onSaveAllNewMembers}
+              onClick={onSaveAll}
+              disabled={newMembersCount === 0}
             >
               모두 저장
             </Button>

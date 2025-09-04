@@ -3,7 +3,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { Organization } from '@/entities';
 import { OrganizationForm } from '@/features/organization';
 import { Edit, Trash2, Plus, Users } from 'lucide-react';
-import { Modal, message } from 'antd';
+import { Button, Modal, message } from 'antd';
 
 interface OrganizationListProps {
   onEditOrganization: (organization: Organization) => void;
@@ -61,12 +61,14 @@ export function OrganizationList({
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">조직 목록</h2>
-        <button
+        <Button
           onClick={handleAddOrganization}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
+          icon={<Plus size={16} />}
+          type="primary"
         >
-          <Plus size={16} />새 조직 추가
-        </button>
+          새 조직 추가
+        </Button>
       </div>
 
       <div className="flex gap-4">
