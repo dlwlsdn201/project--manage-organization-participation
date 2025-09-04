@@ -1,15 +1,14 @@
 {
   "framework": "vite",
-  "buildCommand": "pnpm run build",
+  "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "installCommand": "pnpm install --frozen-lockfile",
+  "installCommand": "npm ci",
   "functions": {
     "app/api/**/*.js": {
       "runtime": "nodejs20.x"
     }
   },
   "env": {
-    "PNPM_FLAGS": "--shamefully-hoist",
     "NPM_CONFIG_FUND": "false",
     "NPM_CONFIG_AUDIT": "false"
   },
