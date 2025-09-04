@@ -2,7 +2,6 @@
   "projectId": "prj_I9CnuXcC0aRZRYygdXUXaPb0Zw2H",
   "orgId": "jY7RmWDeFEzsh5uxqyXpajZm",
   "settings": {
-    "framework": "vite",
-    "nodeVersion": "20.x"
+    "framework": "vite"
   }
 }
