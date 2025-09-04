@@ -3,11 +3,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm ci",
-  "functions": {
-    "app/api/**/*.js": {
-      "runtime": "nodejs20.x"
-    }
-  },
   "env": {
     "NPM_CONFIG_FUND": "false",
     "NPM_CONFIG_AUDIT": "false"
