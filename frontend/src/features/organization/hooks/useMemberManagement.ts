@@ -14,13 +14,16 @@ interface UseMemberManagementProps {
 export const useMemberManagement = ({
   organization,
 }: UseMemberManagementProps) => {
-  const { members, addMember, deleteMember } = useAppStore();
+  const { members, addMember, updateMember, deleteMember } = useAppStore();
   const [memberLoading, setMemberLoading] = useState(false);
   const [newMembers, setNewMembers] = useState<InitialMember[]>([]);
+  const [editedMembers, setEditedMembers] = useState<
+    Map<string, Partial<Member>>
+  >(new Map());
   const [editing, setEditing] = useState(false);
 
   const organizationMembers = organization
-    ? members.filter((m) => m.organizationId === organization._id)
+    ? members.filter((m) => m?.organizationId === organization._id)
     : [];
 
   // 기존 구성원 + 새로 추가할 구성원들을 합친 데이터
@@ -44,6 +47,18 @@ export const useMemberManagement = ({
       district: '',
     };
     setNewMembers((prev) => [...prev, newMember]);
+  };
+
+  const handleEditRow = (memberId: string) => {
+    // 기존 구성원을 편집 모드로 변경
+    if (!editedMembers.has(memberId)) {
+      setEditedMembers((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(memberId, {}); // 빈 변경사항으로 시작
+        return newMap;
+      });
+    }
+    setEditing(true);
   };
 
   // 개별 행 저장
@@ -76,7 +91,43 @@ export const useMemberManagement = ({
         message.error('구성원 추가 중 오류가 발생했습니다.');
       }
     } else {
-      // 기존 구성원 수정 로직은 추후 구현
+      // 기존 구성원 수정 처리
+      const changes = editedMembers.get(key);
+      if (!changes || Object.keys(changes).length === 0) {
+        message.info('변경사항이 없습니다.');
+        return;
+      }
+
+      const existingMember = organizationMembers.find((m) => m._id === key);
+      if (!existingMember) {
+        message.error('구성원을 찾을 수 없습니다.');
+        return;
+      }
+
+      const updatedMember = { ...existingMember, ...changes };
+      if (
+        !updatedMember.name ||
+        !updatedMember.district ||
+        !updatedMember.birthYear
+      ) {
+        message.error('이름, 출생년도, 지역은 필수 입력 항목입니다.');
+        return;
+      }
+
+      try {
+        await updateMember(updatedMember);
+
+        // 편집된 멤버 목록에서 제거
+        setEditedMembers((prev) => {
+          const newMap = new Map(prev);
+          newMap.delete(key);
+          return newMap;
+        });
+
+        message.success('구성원 정보가 수정되었습니다.');
+      } catch (error) {
+        message.error('구성원 수정 중 오류가 발생했습니다.');
+      }
     }
   };
 
@@ -86,6 +137,13 @@ export const useMemberManagement = ({
     if (isNewMember) {
       const index = parseInt(key.replace('new-', ''));
       setNewMembers((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      // 기존 구성원의 편집 변경사항 취소
+      setEditedMembers((prev) => {
+        const newMap = new Map(prev);
+        newMap.delete(key);
+        return newMap;
+      });
     }
   };
 
@@ -103,12 +161,20 @@ export const useMemberManagement = ({
           i === index ? { ...member, [field]: value } : member
         )
       );
+    } else {
+      // 기존 구성원의 변경사항 추적
+      setEditedMembers((prev) => {
+        const newMap = new Map(prev);
+        const existingChanges = newMap.get(key) || {};
+        newMap.set(key, { ...existingChanges, [field]: value });
+        return newMap;
+      });
     }
   };
 
-  // 모든 새 멤버 저장
-  const handleSaveAllNewMembers = async () => {
-    if (!organization || newMembers.length === 0) return;
+  // 모든 멤버 저장
+  const handleSaveAll = async () => {
+    if (!organization) return;
 
     // 현재 편집 중인 행이 있는지 확인
     if (!checkValidMemberInputData()) {
@@ -120,26 +186,15 @@ export const useMemberManagement = ({
 
     setMemberLoading(true);
     try {
-      const validMembers = newMembers.filter(
+      let addedCount = 0;
+      let updatedCount = 0;
+
+      // 1. 새로운 구성원들 처리
+      const validNewMembers = newMembers.filter(
         (member) => member.name && member.district && member.birthYear
       );
 
-      if (validMembers.length === 0) {
-        message.error('저장할 유효한 구성원이 없습니다.');
-        setMemberLoading(false);
-        return;
-      }
-
-      if (validMembers.length !== newMembers.length) {
-        const incompleteCount = newMembers.length - validMembers.length;
-        message.error(
-          `${incompleteCount}개 행의 정보가 불완전합니다. 이름, 출생년도, 지역은 필수 항목입니다.`
-        );
-        setMemberLoading(false);
-        return;
-      }
-
-      for (const memberData of validMembers) {
+      for (const memberData of validNewMembers) {
         await addMember({
           name: memberData.name!,
           gender: memberData.gender!,
@@ -147,12 +202,47 @@ export const useMemberManagement = ({
           district: memberData.district!,
           organizationId: organization._id,
         });
+        addedCount++;
       }
 
+      // 2. 기존 구성원들의 변경사항 처리
+      for (const [memberId, changes] of editedMembers.entries()) {
+        const existingMember = organizationMembers.find(
+          (m) => m._id === memberId
+        );
+        if (existingMember && Object.keys(changes).length > 0) {
+          // 필수 필드 검증
+          const updatedMember = { ...existingMember, ...changes };
+          if (
+            updatedMember.name &&
+            updatedMember.district &&
+            updatedMember.birthYear
+          ) {
+            await updateMember(updatedMember);
+            updatedCount++;
+          }
+        }
+      }
+
+      // 상태 초기화
       setNewMembers([]);
-      message.success(`${validMembers.length}명의 구성원이 추가되었습니다.`);
+      setEditedMembers(new Map());
+
+      // 성공 메시지
+      const messages = [];
+      if (addedCount > 0) messages.push(`${addedCount}명 추가`);
+      if (updatedCount > 0) messages.push(`${updatedCount}명 수정`);
+
+      if (messages.length > 0) {
+        message.success(
+          `구성원 정보가 저장되었습니다. (${messages.join(', ')})`
+        );
+      } else {
+        message.info('저장할 변경사항이 없습니다.');
+      }
     } catch (error) {
-      message.error('구성원 추가 중 오류가 발생했습니다.');
+      console.error('구성원 저장 오류:', error);
+      message.error('구성원 저장 중 오류가 발생했습니다.');
     } finally {
       setMemberLoading(false);
     }
@@ -170,7 +260,13 @@ export const useMemberManagement = ({
 
   // 멤버 입력 데이터 검증
   const checkValidMemberInputData = () => {
-    if (validateMembersData(newMembers)) {
+    // 새로운 멤버들의 유효성 검증
+    const newMembersValid = validateMembersData(newMembers);
+
+    // 편집 중인 기존 멤버들이 있는지 확인
+    const hasEditedMembers = editedMembers.size > 0;
+
+    if (newMembersValid && !hasEditedMembers) {
       setEditing(false);
       return true;
     } else {
@@ -179,14 +275,14 @@ export const useMemberManagement = ({
     }
   };
 
-  // newMembers 상태에 따른 editing 상태 관리
+  // newMembers와 editedMembers 상태에 따른 editing 상태 관리
   useEffect(() => {
-    if (newMembers.length === 0) {
+    if (newMembers.length === 0 && editedMembers.size === 0) {
       setEditing(false);
     } else {
       setEditing(true);
     }
-  }, [newMembers]);
+  }, [newMembers, editedMembers]);
 
   return {
     // 상태
@@ -195,13 +291,15 @@ export const useMemberManagement = ({
     editing,
     organizationMembers,
     allMembers,
+    editedMembers,
 
     // 액션들
     handleAddNewRow,
+    handleEditRow,
     handleSaveInlineRow,
     handleCancelInlineEdit,
     handleInlineFieldChange,
-    handleSaveAllNewMembers,
+    handleSaveAll,
     handleDeleteMember,
     checkValidMemberInputData,
   };

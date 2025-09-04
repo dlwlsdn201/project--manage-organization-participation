@@ -30,11 +30,13 @@ export const OrganizationForm = ({
     editing,
     organizationMembers,
     allMembers,
+    editedMembers,
     handleAddNewRow,
+    handleEditRow,
     handleSaveInlineRow,
     handleCancelInlineEdit,
     handleInlineFieldChange,
-    handleSaveAllNewMembers,
+    handleSaveAll,
     handleDeleteMember,
   } = useMemberManagement({ organization });
 
@@ -57,8 +59,10 @@ export const OrganizationForm = ({
       newMembersCount={newMembers.length}
       editing={editing}
       memberLoading={memberLoading}
+      editedMembers={editedMembers}
       onAddNewRow={handleAddNewRow}
-      onSaveAllNewMembers={handleSaveAllNewMembers}
+      onEditRow={handleEditRow}
+      onSaveAll={handleSaveAll}
       onFieldChange={handleInlineFieldChange}
       onSaveRow={handleSaveInlineRow}
       onCancelEdit={handleCancelInlineEdit}
