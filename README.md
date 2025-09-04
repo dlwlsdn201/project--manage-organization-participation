@@ -263,3 +263,6 @@ MIT License
 ---
 
 **배포 가이드**: 자세한 배포 방법은 [DEPLOYMENT.md](./DEPLOYMENT.md)를 참조하세요.
+
+**Vercel deploy 관련 이슈 해결 참조 자료**
+- https://jelaniharris.com/blog/fixing-errinvalidthis-error-on-vercel-using-pnpm/
