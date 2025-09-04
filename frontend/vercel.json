@@ -2,7 +2,7 @@
   "framework": "vite",
   "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
-  "installCommand": "pnpm install --frozen-lockfile",
+  "installCommand": "pnpm install",
   "env": {
     "PNPM_FLAGS": "--shamefully-hoist",
     "NPM_CONFIG_FUND": "false",
