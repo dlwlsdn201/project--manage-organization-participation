@@ -1,8 +1,23 @@
-import { Button, Input, Select, Space, Popconfirm } from 'antd';
+import { Button, Input, Select, Space, Popconfirm, DatePicker } from 'antd';
 import { Edit, Trash2 } from 'lucide-react';
 import { Member } from '@/entities';
+import dayjs from 'dayjs';
+import ko from 'antd/es/date-picker/locale/ko_KR';
 
 const { Option } = Select;
+
+const checkEnableEditMode = (
+  record: Member,
+  editedMembers: Map<string, Partial<Member>>
+) => {
+  const isNewMember = record._id.startsWith('new-');
+  const isEditedMember = editedMembers.has(record._id);
+  return {
+    isNewMember,
+    isEditedMember,
+    shouldEditMode: isNewMember || isEditedMember,
+  };
+};
 
 interface TableColumnConfig {
   editing: boolean;
@@ -28,10 +43,9 @@ export const createMemberColumns = ({
     dataIndex: 'name',
     key: 'name',
     render: (_: unknown, record: Member) => {
-      const isNewMember = record._id.startsWith('new-');
-      const isBeingEdited = isNewMember || editedMembers.has(record._id);
+      const { shouldEditMode } = checkEnableEditMode(record, editedMembers);
 
-      if (editing && isBeingEdited) {
+      if (editing && shouldEditMode) {
         return (
           <Input
             placeholder="이름을 입력하세요"
@@ -41,7 +55,9 @@ export const createMemberColumns = ({
           />
         );
       }
-      return record.name || (isNewMember ? '이름을 입력하세요' : record.name);
+      return (
+        record.name || (shouldEditMode ? '이름을 입력하세요' : record.name)
+      );
     },
   },
   {
@@ -49,10 +65,9 @@ export const createMemberColumns = ({
     dataIndex: 'gender',
     key: 'gender',
     render: (_: unknown, record: Member) => {
-      const isNewMember = record._id.startsWith('new-');
-      const isBeingEdited = isNewMember || editedMembers.has(record._id);
+      const { shouldEditMode } = checkEnableEditMode(record, editedMembers);
 
-      if (editing && isBeingEdited) {
+      if (editing && shouldEditMode) {
         return (
           <Select
             defaultValue={record.gender || 'male'}
@@ -73,10 +88,9 @@ export const createMemberColumns = ({
     dataIndex: 'birthYear',
     key: 'birthYear',
     render: (_: unknown, record: Member) => {
-      const isNewMember = record._id.startsWith('new-');
-      const isBeingEdited = isNewMember || editedMembers.has(record._id);
+      const { shouldEditMode } = checkEnableEditMode(record, editedMembers);
 
-      if (editing && isBeingEdited) {
+      if (editing && shouldEditMode) {
         return (
           <Input
             type="number"
@@ -96,18 +110,18 @@ export const createMemberColumns = ({
           />
         );
       }
-      return record.birthYear || (isNewMember ? 'YYYY' : record.birthYear);
+      return record.birthYear || (shouldEditMode ? 'YYYY' : record.birthYear);
     },
   },
   {
     title: '지역',
     dataIndex: 'district',
     key: 'district',
+    width: 100,
     render: (_: unknown, record: Member) => {
-      const isNewMember = record._id.startsWith('new-');
-      const isBeingEdited = isNewMember || editedMembers.has(record._id);
+      const { shouldEditMode } = checkEnableEditMode(record, editedMembers);
 
-      if (editing && isBeingEdited) {
+      if (editing && shouldEditMode) {
         return (
           <Input
             placeholder="지역을 입력하세요"
@@ -120,13 +134,15 @@ export const createMemberColumns = ({
         );
       }
       return (
-        record.district || (isNewMember ? '지역을 입력하세요' : record.district)
+        record.district ||
+        (shouldEditMode ? '지역을 입력하세요' : record.district)
       );
     },
   },
   {
     title: '나이',
     key: 'age',
+    width: 90,
     sorter: (a: Member, b: Member) =>
       new Date(a.joinedAt).getTime() - new Date(b.joinedAt).getTime(),
     render: (_: unknown, record: Member) => {
@@ -141,22 +157,34 @@ export const createMemberColumns = ({
     title: '가입일',
     dataIndex: 'joinedAt',
     key: 'joinedAt',
+    width: 150,
     sorter: (a: Member, b: Member) =>
       new Date(a.joinedAt).getTime() - new Date(b.joinedAt).getTime(),
     render: (date: Date, record: Member) => {
-      const isNewMember = record._id.startsWith('new-');
+      const { isNewMember, shouldEditMode } = checkEnableEditMode(
+        record,
+        editedMembers
+      );
       if (isNewMember) return '오늘';
-      return new Date(date).toLocaleDateString();
+      else if (editing && shouldEditMode) {
+        return (
+          <DatePicker
+            size="small"
+            locale={ko}
+            defaultValue={dayjs(record.joinedAt)}
+            onChange={(value) => onFieldChange(record._id, 'joinedAt', value)}
+          />
+        );
+      } else return new Date(date).toLocaleDateString();
     },
   },
   {
     title: '작업',
     key: 'actions',
     render: (_: unknown, record: Member) => {
-      const isNewMember = record._id.startsWith('new-');
-      const isBeingEdited = isNewMember || editedMembers.has(record._id);
+      const { shouldEditMode } = checkEnableEditMode(record, editedMembers);
 
-      if (editing && isBeingEdited) {
+      if (editing && shouldEditMode) {
         return (
           <Space>
             <Button
@@ -175,7 +203,7 @@ export const createMemberColumns = ({
 
       return (
         <Space>
-          {!isNewMember && (
+          {!shouldEditMode && (
             <>
               <Button
                 size="small"

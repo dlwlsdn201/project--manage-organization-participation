@@ -152,7 +152,7 @@ export function OrganizationList({
         onOk={handleModalOk}
         onCancel={handleModalCancel}
         footer={null}
-        style={{ minWidth: '60vw' }}
+        style={{ minWidth: '65vw' }}
         destroyOnHidden={true}
       >
         <OrganizationForm

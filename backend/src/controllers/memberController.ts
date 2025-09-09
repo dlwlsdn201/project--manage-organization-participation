@@ -219,34 +219,3 @@ export const deleteMember = asyncHandler(
     });
   }
 );
-
-// 구성원 상태 변경 (active/inactive)
-export const updateMemberStatus = asyncHandler(
-  async (req: Request, res: Response<ApiResponse>) => {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    if (!['active', 'inactive'].includes(status)) {
-      throw new AppError(
-        '올바른 상태값이 아닙니다. (active 또는 inactive)',
-        400
-      );
-    }
-
-    const member = await Member.findByIdAndUpdate(
-      id,
-      { status, updatedAt: new Date() },
-      { new: true }
-    );
-
-    if (!member) {
-      throw new AppError('구성원을 찾을 수 없습니다.', 404);
-    }
-
-    res.json({
-      success: true,
-      message: '구성원 상태가 성공적으로 변경되었습니다.',
-      data: member.toJSON(),
-    });
-  }
-);

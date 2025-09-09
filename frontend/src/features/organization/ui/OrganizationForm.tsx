@@ -78,8 +78,8 @@ export const OrganizationForm = ({
   );
 
   return (
-    <div>
+    <>
       <Tabs items={tabItems} />
-    </div>
+    </>
   );
 };
