@@ -3,6 +3,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { Event } from '@/entities';
 import { Button, Form, Input, Select, DatePicker, message } from 'antd';
 import dayjs from 'dayjs';
+import ko from 'antd/es/date-picker/locale/ko_KR';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -110,8 +111,9 @@ export function EventForm({
         rules={[{ required: true, message: '모임 날짜를 선택해주세요' }]}
       >
         <DatePicker
-          showTime={false}
-          format="YYYY-MM-DD"
+          showTime={true}
+          format="YYYY-MM-DD HH:mm"
+          locale={ko}
           placeholder="모임 날짜를 선택하세요"
           style={{ width: '100%' }}
         />
