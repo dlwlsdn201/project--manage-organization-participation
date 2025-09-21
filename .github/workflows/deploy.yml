@@ -70,7 +70,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+          pnpm install || pnpm install --no-frozen-lockfile
 
       - name: Run tests
         run: pnpm --filter backend test
