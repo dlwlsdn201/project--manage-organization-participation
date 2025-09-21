@@ -22,7 +22,7 @@ const checkEnableEditMode = (
 interface TableColumnConfig {
   editing: boolean;
   editedMembers: Map<string, Partial<Member>>;
-  onFieldChange: (key: string, field: keyof Member, value: any) => void;
+  onFieldChange: (key: string, field: keyof Member, value: unknown) => void;
   onSaveRow: (key: string) => void;
   onEditRow: (key: string) => void;
   onCancelEdit: (key: string) => void;

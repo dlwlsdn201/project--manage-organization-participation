@@ -1,16 +1,6 @@
 // Shared API layer - 공통 API 함수들
 import { Organization, Member, Event, ActivityLog } from '../../entities';
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
-
-// API 응답 타입
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
+import { apiClient } from '../lib/api-client';
 
 // 초기 데이터 로드 API
 export const initialDataApi = {
@@ -21,23 +11,18 @@ export const initialDataApi = {
     activityLogs: ActivityLog[];
   }> {
     try {
-      const [orgsRes, membersRes, eventsRes, logsRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/organizations`),
-        fetch(`${API_BASE_URL}/members`),
-        fetch(`${API_BASE_URL}/events`),
-        fetch(`${API_BASE_URL}/logs`),
+      const [organizations, members, events, activityLogs] = await Promise.all([
+        apiClient.get<Organization[]>('/organizations'),
+        apiClient.get<Member[]>('/members'),
+        apiClient.get<Event[]>('/events'),
+        apiClient.get<ActivityLog[]>('/logs'),
       ]);
 
-      const organizations = await orgsRes.json();
-      const members = await membersRes.json();
-      const events = await eventsRes.json();
-      const activityLogs = await logsRes.json();
-
       return {
-        organizations: organizations.data || [],
-        members: members.data || [],
-        events: events.data || [],
-        activityLogs: activityLogs.data || [],
+        organizations: organizations || [],
+        members: members || [],
+        events: events || [],
+        activityLogs: activityLogs || [],
       };
     } catch (error) {
       console.error('초기 데이터 로드 실패:', error);
@@ -54,173 +39,101 @@ export const initialDataApi = {
 // 조직 API
 export const organizationApi = {
   async getAll(): Promise<Organization[]> {
-    const response = await fetch(`${API_BASE_URL}/organizations`);
-    const data = await response.json();
-    return data.data || [];
+    return apiClient.get<Organization[]>('/organizations');
   },
 
   async getById(id: string): Promise<Organization | null> {
-    const response = await fetch(`${API_BASE_URL}/organizations/${id}`);
-    const data = await response.json();
-    return data.data || null;
+    return apiClient.get<Organization | null>(`/organizations/${id}`);
   },
 
   async create(
     organization: Omit<Organization, '_id' | 'createdAt' | 'updatedAt'>
   ): Promise<Organization> {
-    const response = await fetch(`${API_BASE_URL}/organizations`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(organization),
-    });
-    const data = await response.json();
-    return data.data;
+    return apiClient.post<Organization>('/organizations', organization);
   },
 
   async update(
     id: string,
     organization: Partial<Organization>
   ): Promise<Organization> {
-    const response = await fetch(`${API_BASE_URL}/organizations/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(organization),
-    });
-    const data = await response.json();
-    return data.data;
+    return apiClient.put<Organization>(`/organizations/${id}`, organization);
   },
 
   async delete(id: string): Promise<void> {
-    await fetch(`${API_BASE_URL}/organizations/${id}`, {
-      method: 'DELETE',
-    });
+    return apiClient.delete<void>(`/organizations/${id}`);
   },
 };
 
 // 이벤트 API
 export const eventApi = {
   async getAll(): Promise<Event[]> {
-    const response = await fetch(`${API_BASE_URL}/events`);
-    const data = await response.json();
-    return data.data || [];
+    return apiClient.get<Event[]>('/events');
   },
 
   async getByOrganization(organizationId: string): Promise<Event[]> {
-    const response = await fetch(
-      `${API_BASE_URL}/events?organizationId=${organizationId}`
-    );
-    const data = await response.json();
-    return data.data || [];
+    return apiClient.get<Event[]>(`/events?organizationId=${organizationId}`);
   },
 
   async create(
     event: Omit<Event, '_id' | 'createdAt' | 'updatedAt'>
   ): Promise<Event> {
-    const response = await fetch(`${API_BASE_URL}/events`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(event),
-    });
-    const data = await response.json();
-    return data.data;
+    return apiClient.post<Event>('/events', event);
   },
 
   async update(id: string, event: Partial<Event>): Promise<Event> {
-    const response = await fetch(`${API_BASE_URL}/events/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(event),
-    });
-    const data = await response.json();
-    return data.data;
+    return apiClient.put<Event>(`/events/${id}`, event);
   },
 
   async delete(id: string): Promise<void> {
-    await fetch(`${API_BASE_URL}/events/${id}`, {
-      method: 'DELETE',
-    });
+    return apiClient.delete<void>(`/events/${id}`);
   },
 };
 
 // 멤버 API
 export const memberApi = {
   async getAll(): Promise<Member[]> {
-    const response = await fetch(`${API_BASE_URL}/members`);
-    const data = await response.json();
-    return data.data || [];
+    return apiClient.get<Member[]>('/members');
   },
 
   async getById(id: string): Promise<Member | null> {
-    const response = await fetch(`${API_BASE_URL}/members/${id}`);
-    const data = await response.json();
-    return data.data || null;
+    return apiClient.get<Member | null>(`/members/${id}`);
   },
 
   async create(
     member: Omit<Member, '_id' | 'joinedAt' | 'updatedAt'>
   ): Promise<Member> {
-    const response = await fetch(`${API_BASE_URL}/members`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(member),
-    });
-    const data = await response.json();
-    return data.data;
+    return apiClient.post<Member>('/members', member);
   },
 
   async update(id: string, member: Partial<Member>): Promise<Member> {
-    const response = await fetch(`${API_BASE_URL}/members/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(member),
-    });
-    const data = await response.json();
-    return data.data;
+    return apiClient.put<Member>(`/members/${id}`, member);
   },
 
   async delete(id: string): Promise<void> {
-    await fetch(`${API_BASE_URL}/members/${id}`, {
-      method: 'DELETE',
-    });
+    return apiClient.delete<void>(`/members/${id}`);
   },
 };
 
 // 활동 로그 API
 export const activityLogApi = {
   async getAll(): Promise<ActivityLog[]> {
-    const response = await fetch(`${API_BASE_URL}/logs`);
-    const data = await response.json();
-    return data.data || [];
+    return apiClient.get<ActivityLog[]>('/logs');
   },
 
   async create(
     log: Omit<ActivityLog, 'id' | 'timestamp'>
   ): Promise<ActivityLog> {
-    const response = await fetch(`${API_BASE_URL}/logs`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(log),
-    });
-    const data = await response.json();
-    return data.data;
+    return apiClient.post<ActivityLog>('/logs', log);
   },
 };
 
 // 분석 API
 export const analyticsApi = {
-  async getAttendanceStats(organizationId: string): Promise<any> {
-    const response = await fetch(
-      `${API_BASE_URL}/analytics/attendance/${organizationId}`
-    );
-    const data = await response.json();
-    return data.data || [];
+  async getAttendanceStats(organizationId: string): Promise<unknown> {
+    return apiClient.get<unknown>(`/analytics/attendance/${organizationId}`);
   },
 
-  async getEventStats(organizationId: string): Promise<any> {
-    const response = await fetch(
-      `${API_BASE_URL}/analytics/events/${organizationId}`
-    );
-    const data = await response.json();
-    return data.data || [];
+  async getEventStats(organizationId: string): Promise<unknown> {
+    return apiClient.get<unknown>(`/analytics/events/${organizationId}`);
   },
 };

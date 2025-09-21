@@ -31,11 +31,17 @@ export const useOrganizationForm = ({
   }, [organization, form]);
 
   // 폼 제출 처리
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: {
+    name: string;
+    description: string;
+    type: string;
+    maxMembers: number;
+    settings: { participationRule: string };
+  }) => {
     setLoading(true);
 
     try {
-      if (!!organization) {
+      if (organization) {
         await updateOrganization(organization._id, values);
         message.success('조직이 수정되었습니다.');
       } else {
@@ -47,7 +53,7 @@ export const useOrganizationForm = ({
         message.success('조직이 생성되었습니다.');
       }
       onSuccess();
-    } catch (error) {
+    } catch {
       message.error('조직 저장 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);

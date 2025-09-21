@@ -4,7 +4,6 @@ import { EventManager } from '../../widgets/EventManager';
 import { useAppStore } from '../../store/useAppStore';
 
 jest.mock('../../store/useAppStore');
-jest.mock('../../services/api');
 
 const mockUseAppStore = useAppStore as jest.MockedFunction<typeof useAppStore>;
 

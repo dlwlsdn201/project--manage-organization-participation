@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useAppStore } from '@/store/useAppStore';
+import { useOrganizationStore } from '@/features/organization/lib';
 import { Organization } from '@/entities';
 import { OrganizationForm } from '@/features/organization';
+import { LoadingSpinner, EmptyState } from '@/shared/ui';
 import { Edit, Trash2, Plus, Users } from 'lucide-react';
 import { Button, Modal, message } from 'antd';
 
@@ -12,7 +13,7 @@ interface OrganizationListProps {
 export function OrganizationList({
   onEditOrganization,
 }: OrganizationListProps) {
-  const { organizations, loading, deleteOrganization } = useAppStore();
+  const { organizations, loading, deleteOrganization } = useOrganizationStore();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingOrganization, setEditingOrganization] =
     useState<Organization | null>(null);
@@ -31,7 +32,7 @@ export function OrganizationList({
     try {
       await deleteOrganization(organization._id);
       message.success('조직이 삭제되었습니다.');
-    } catch (error) {
+    } catch {
       message.error('조직 삭제 중 오류가 발생했습니다.');
     }
   };
@@ -47,14 +48,7 @@ export function OrganizationList({
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">데이터를 불러오는 중...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
@@ -82,9 +76,10 @@ export function OrganizationList({
       </div>
 
       {filteredOrganizations.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">등록된 조직이 없습니다.</p>
-        </div>
+        <EmptyState
+          title="등록된 조직이 없습니다"
+          description="새로운 조직을 추가해보세요"
+        />
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredOrganizations.map((organization) => (

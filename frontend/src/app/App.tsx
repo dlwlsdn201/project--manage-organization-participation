@@ -1,40 +1,28 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
+import { useOrganizationStore } from '../features/organization/lib';
 import { OrganizationList } from '../widgets/organization';
 import { EventManager } from '../widgets/EventManager';
 import { AttendanceTracker } from '../widgets/AttendanceTracker';
 import { Organization } from '../entities/organization';
-import { initialDataApi } from '../shared/api';
+import { LoadingSpinner } from '../shared/ui';
 import { message } from 'antd';
 
 type TabType = 'organizations' | 'events' | 'analytics';
 
 function App() {
-  const {
-    user,
-    selectedOrganization,
-    loading,
-    setUser,
-    setOrganizations,
-    setMembers,
-    setEvents,
-    setActivityLogs,
-    setLoading,
-    selectOrganization,
-  } = useAppStore();
+  const { user, loading, setUser, loadInitialData } = useAppStore();
+
+  const { selectedOrganization, setSelectedOrganization } =
+    useOrganizationStore();
 
   const [activeTab, setActiveTab] = useState<TabType>('organizations');
 
   // 초기 데이터 로드
   useEffect(() => {
     const loadData = async () => {
-      setLoading(true);
       try {
-        const data = await initialDataApi.loadAll();
-        setOrganizations(data.organizations || []);
-        setMembers(data.members || []);
-        setEvents(data.events || []);
-        setActivityLogs(data.activityLogs || []);
+        await loadInitialData();
 
         // 기본 사용자 설정 (임시)
         setUser({
@@ -50,16 +38,14 @@ function App() {
       } catch (error) {
         console.error('초기 데이터 로딩 실패:', error);
         message.error('데이터 로딩 중 오류가 발생했습니다.');
-      } finally {
-        setLoading(false);
       }
     };
 
     loadData();
-  }, [setUser, setOrganizations, setMembers, setActivityLogs, setLoading]);
+  }, [loadInitialData, setUser]);
 
   const handleEditOrganization = (organization: Organization) => {
-    selectOrganization(organization);
+    setSelectedOrganization(organization);
     setActiveTab('events');
   };
 
@@ -157,7 +143,7 @@ function App() {
             <button
               className="px-3 py-1.5 text-sm bg-transparent text-slate-600 border border-gray-300 rounded hover:bg-gray-50 hover:border-gray-400 transition-colors"
               onClick={() => {
-                selectOrganization(null);
+                setSelectedOrganization(null);
                 setActiveTab('organizations');
               }}
             >
@@ -166,16 +152,7 @@ function App() {
           </div>
         )}
 
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-              <p className="text-slate-600">데이터를 불러오는 중...</p>
-            </div>
-          </div>
-        ) : (
-          <div>{renderTabContent()}</div>
-        )}
+        {loading ? <LoadingSpinner /> : <div>{renderTabContent()}</div>}
       </main>
     </div>
   );

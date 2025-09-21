@@ -40,13 +40,20 @@ export function EventForm({
     }
   }, [event, form]);
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: {
+    title: string;
+    description: string;
+    date: { toDate: () => Date };
+    location: string;
+    maxParticipants?: number;
+  }) => {
     setLoading(true);
     try {
       const eventData = {
         ...values,
         date: values.date.toDate(),
         organizationId,
+        hostId: 'current_user',
         currentParticipants: event?.currentParticipants || 0,
         status: 'published' as const,
         attendees: event?.attendees || [],
@@ -73,7 +80,7 @@ export function EventForm({
         message.success('모임이 생성되었습니다.');
       }
       onSuccess();
-    } catch (error) {
+    } catch {
       message.error('모임 저장 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);

@@ -12,7 +12,13 @@ interface OrganizationBasicFormProps {
   form: FormInstance;
   loading: boolean;
   isEdit: boolean;
-  onSubmit: (values: any) => void;
+  onSubmit: (values: {
+    name: string;
+    description: string;
+    type: string;
+    maxMembers: number;
+    settings: { participationRule: string };
+  }) => void;
   onCancel: () => void;
 }
 

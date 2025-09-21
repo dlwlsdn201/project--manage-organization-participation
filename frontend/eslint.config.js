@@ -5,19 +5,17 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist'] },
+  { ignores: ['dist', 'coverage'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2020,
-      globals: globals.browser,
-    },
-    env: {
-      browser: true,
-      node: true,
-      es6: true,
-      jest: true,
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.jest,
+      },
     },
     plugins: {
       'react-hooks': reactHooks,
@@ -35,10 +33,10 @@ export default tseslint.config(
       'no-duplicate-case': 'error', // 같은 스코프에 존재하는 switch-case 구문들 중에서 중복되는 case 구문을 허용하지 않음. (See: https://eslint.org/docs/latest/rules/no-duplicate-case)
       'no-duplicate-imports': 'warn', // 같은 모듈로부터 import 하는 구문이 2개 이상 중복 작성되는 것을 경고함. (See: https://eslint.org/docs/latest/rules/no-duplicate-import)
       'no-unsafe-optional-chaining': 'error', // 안전하지 않은 옵셔널 체이닝 구문을 허용하지 않음. (See: https://eslint.org/docs/latest/rules/no-unsafe-optional-chaining)
-     camelcase: [
+      camelcase: [
         'error',
         {
-          properties: true,
+          properties: 'never',
           ignoreDestructuring: true,
           ignoreImports: true,
         },

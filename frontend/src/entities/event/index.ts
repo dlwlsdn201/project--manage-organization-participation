@@ -10,7 +10,11 @@ export interface Event {
   maxParticipants?: number;
   currentParticipants: number;
   status: 'draft' | 'published' | 'ongoing' | 'completed' | 'cancelled';
-  attendees: string[];
+  attendees: Array<{
+    memberId: string;
+    status: 'confirmed' | 'pending' | 'declined';
+    joinedAt: Date;
+  }>;
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;

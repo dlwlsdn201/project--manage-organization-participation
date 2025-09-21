@@ -2,6 +2,7 @@
 export interface Member extends InitialMember {
   _id: string;
   organizationId: string;
+  status: 'active' | 'inactive' | 'pending';
   joinedAt: Date;
   updatedAt: Date;
 }
@@ -9,7 +10,7 @@ export interface Member extends InitialMember {
 // 신규 등록 시, 구성원 데이터 객체의 초기 인터페이스
 export interface InitialMember {
   name: string;
-  gender: 'male' | 'female';
+  gender: 'male' | 'female' | 'other';
   birthYear: number;
   district: string;
 }

@@ -19,9 +19,13 @@ export const ParticipantManager = ({
 }: ParticipantManagerProps) => {
   const { events, members, updateEvent } = useAppStore();
   const [loading, setLoading] = useState(false);
-  const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
-    []
-  );
+  const [selectedParticipants, setSelectedParticipants] = useState<
+    Array<{
+      memberId: string;
+      status: 'confirmed' | 'pending' | 'declined';
+      joinedAt: Date;
+    }>
+  >([]);
 
   const event = events.find((e) => e._id === eventId);
   const organizationMembers = members.filter(
@@ -36,9 +40,18 @@ export const ParticipantManager = ({
 
   const handleParticipantToggle = (memberId: string, checked: boolean) => {
     if (checked) {
-      setSelectedParticipants((prev) => [...prev, memberId]);
+      setSelectedParticipants((prev) => [
+        ...prev,
+        {
+          memberId,
+          status: 'confirmed' as const,
+          joinedAt: new Date(),
+        },
+      ]);
     } else {
-      setSelectedParticipants((prev) => prev.filter((id) => id !== memberId));
+      setSelectedParticipants((prev) =>
+        prev.filter((participant) => participant.memberId !== memberId)
+      );
     }
   };
 
@@ -53,7 +66,7 @@ export const ParticipantManager = ({
       });
       message.success('참가자 목록이 업데이트되었습니다.');
       onSuccess();
-    } catch (error) {
+    } catch {
       message.error('참가자 목록 업데이트 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -65,9 +78,9 @@ export const ParticipantManager = ({
       title: '참가',
       key: 'participate',
       width: 80,
-      render: (_: any, record: Member) => (
+      render: (_: unknown, record: Member) => (
         <Checkbox
-          checked={selectedParticipants.includes(record._id)}
+          checked={selectedParticipants.some((p) => p.memberId === record._id)}
           onChange={(e) =>
             handleParticipantToggle(record._id, e.target.checked)
           }

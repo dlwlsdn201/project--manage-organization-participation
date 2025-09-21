@@ -87,7 +87,7 @@ export const useMemberManagement = ({
         // 새 구성원 목록에서 제거
         setNewMembers((prev) => prev.filter((_, i) => i !== index));
         message.success('구성원이 추가되었습니다.');
-      } catch (error) {
+      } catch {
         message.error('구성원 추가 중 오류가 발생했습니다.');
       }
     } else {
@@ -125,7 +125,7 @@ export const useMemberManagement = ({
         });
 
         message.success('구성원 정보가 수정되었습니다.');
-      } catch (error) {
+      } catch {
         message.error('구성원 수정 중 오류가 발생했습니다.');
       }
     }
@@ -151,7 +151,7 @@ export const useMemberManagement = ({
   const handleInlineFieldChange = (
     key: string,
     field: keyof Member,
-    value: any
+    value: unknown
   ) => {
     const isNewMember = key.startsWith('new-');
     if (isNewMember) {
@@ -194,18 +194,20 @@ export const useMemberManagement = ({
         (member) => member.name && member.district && member.birthYear
       );
 
-      for (const memberData of validNewMembers) {
-        await addMember({
+      const addPromises = validNewMembers.map((memberData) =>
+        addMember({
           name: memberData.name!,
           gender: memberData.gender!,
           birthYear: memberData.birthYear!,
           district: memberData.district!,
           organizationId: organization._id,
-        });
-        addedCount++;
-      }
+        })
+      );
+      await Promise.all(addPromises);
+      addedCount = validNewMembers.length;
 
       // 2. 기존 구성원들의 변경사항 처리
+      const updatePromises = [];
       for (const [memberId, changes] of editedMembers.entries()) {
         const existingMember = organizationMembers.find(
           (m) => m._id === memberId
@@ -218,11 +220,12 @@ export const useMemberManagement = ({
             updatedMember.district &&
             updatedMember.birthYear
           ) {
-            await updateMember(updatedMember);
-            updatedCount++;
+            updatePromises.push(updateMember(updatedMember));
           }
         }
       }
+      await Promise.all(updatePromises);
+      updatedCount = updatePromises.length;
 
       // 상태 초기화
       setNewMembers([]);
@@ -253,7 +256,7 @@ export const useMemberManagement = ({
     try {
       await deleteMember(memberId);
       message.success('구성원이 삭제되었습니다.');
-    } catch (error) {
+    } catch {
       message.error('구성원 삭제 중 오류가 발생했습니다.');
     }
   };

@@ -13,7 +13,7 @@ interface MemberTableProps {
   onAddNewRow: () => void;
   onEditRow: (memberId: string) => void;
   onSaveAll: () => void;
-  onFieldChange: (key: string, field: keyof Member, value: any) => void;
+  onFieldChange: (key: string, field: keyof Member, value: unknown) => void;
   onSaveRow: (key: string) => void;
   onCancelEdit: (key: string) => void;
   onDeleteMember: (memberId: string) => void;

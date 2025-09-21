@@ -6,5 +6,5 @@ export interface ActivityLog {
   action: string;
   details: string;
   timestamp: Date;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }

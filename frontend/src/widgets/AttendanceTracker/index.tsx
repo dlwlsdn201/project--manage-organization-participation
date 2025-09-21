@@ -9,7 +9,7 @@ interface AttendanceTrackerProps {
 }
 
 export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
-  const { events, members } = useAppStore();
+  const { events } = useAppStore();
   const [dateRange, setDateRange] = useState<{
     startDate: Date | null;
     endDate: Date | null;
@@ -23,8 +23,8 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
   }, [events, organizationId]);
 
   const organizationMembers = useMemo(() => {
-    return members.filter((member) => member.organizationId === organizationId);
-  }, [members, organizationId]);
+    return [];
+  }, []);
 
   const filteredEvents = useMemo(() => {
     if (!dateRange.startDate && !dateRange.endDate) {

@@ -55,11 +55,11 @@ export function DateRangeFilter({
     onDateChange({ startDate: newStartDate, endDate: newEndDate });
   };
 
-  const handleRangeChange = (dates: any) => {
-    if (dates) {
+  const handleRangeChange = (dates: unknown) => {
+    if (dates && Array.isArray(dates)) {
       onDateChange({
-        startDate: dates[0]?.toDate() || null,
-        endDate: dates[1]?.toDate() || null,
+        startDate: dates[0] ? dates[0].toDate() : null,
+        endDate: dates[1] ? dates[1].toDate() : null,
       });
       setPreset('custom');
     } else {
