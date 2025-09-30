@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Event } from '@/entities';
-import { Button, Form, Input, Select, DatePicker, message } from 'antd';
+import { Form, Input, Select, DatePicker, message } from 'antd';
 import dayjs from 'dayjs';
 import ko from 'antd/es/date-picker/locale/ko_KR';
+import { DefaultButton } from '@/shared/ui/Button';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -153,10 +154,10 @@ export function EventForm({
       </Form.Item>
 
       <div className="flex justify-end gap-2 pt-4">
-        <Button onClick={onCancel}>취소</Button>
-        <Button type="primary" htmlType="submit" loading={loading}>
+        <DefaultButton onClick={onCancel}>취소</DefaultButton>
+        <DefaultButton type="primary" htmlType="submit" loading={loading}>
           {isEditing ? '수정' : '생성'}
-        </Button>
+        </DefaultButton>
       </div>
     </Form>
   );

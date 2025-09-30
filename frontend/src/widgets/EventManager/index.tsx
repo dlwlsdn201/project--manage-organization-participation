@@ -7,6 +7,7 @@ import { Edit, Trash2, Plus, Users, Calendar, MapPin } from 'lucide-react';
 import { Modal, message, Popconfirm, Badge } from 'antd';
 import { EmptyState } from '@/shared/ui/Empty';
 import { LoadingSpinner } from '@/shared/ui/Spinner';
+import { DefaultButton } from '@/shared/ui/Button';
 
 interface EventManagerProps {
   organizationId: string;
@@ -84,16 +85,21 @@ export function EventManager({ organizationId }: EventManagerProps) {
           <h2 className="text-2xl font-bold text-gray-900">모임 목록</h2>
           <div className="px-3 py-1 text-sm font-medium flex items-center gap-1">
             <span>총</span>
-            <Badge count={organizationEvents.length} color="blue" dot={false} />
+            <Badge
+              count={organizationEvents.length}
+              style={{ backgroundColor: '#667eea' }}
+              dot={false}
+            />
             개
           </div>
         </div>
-        <button
+        <DefaultButton
           onClick={handleAddEvent}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+          icon={<Plus size={16} />}
+          type="primary"
         >
-          <Plus size={16} />새 모임 추가
-        </button>
+          새 모임 추가
+        </DefaultButton>
       </div>
 
       <div className="flex gap-4">

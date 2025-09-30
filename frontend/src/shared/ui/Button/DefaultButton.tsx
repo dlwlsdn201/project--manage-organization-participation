@@ -17,6 +17,7 @@ export const DefaultButton: React.FC<DefaultButtonProps> = ({
     <AntButton
       {...props}
       loading={loading}
+      className={props.type === 'primary' ? 'bg-primary-500' : ''}
       disabled={disabled || loading}
       icon={loading ? <LoadingOutlined /> : props.icon}
     >

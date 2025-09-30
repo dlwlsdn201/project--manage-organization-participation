@@ -1,9 +1,10 @@
-import { Form, Input, Select, Button } from 'antd';
+import { Form, Input, Select } from 'antd';
 import { FormInstance } from 'antd/es/form';
 import {
   organizationTypeOptions,
   participationRuleOptions,
 } from '@/features/organization/config/formConfig';
+import { DefaultButton } from '@/shared/ui/Button';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -92,17 +93,10 @@ export const OrganizationBasicForm = ({
       </Form.Item>
 
       <div className="flex flex-col mobile:flex-row justify-end gap-2 pt-4">
-        <Button onClick={onCancel} className="w-full mobile:w-auto">
-          취소
-        </Button>
-        <Button
-          type="primary"
-          htmlType="submit"
-          loading={loading}
-          className="w-full mobile:w-auto"
-        >
+        <DefaultButton onClick={onCancel}>취소</DefaultButton>
+        <DefaultButton type="primary" htmlType="submit" loading={loading}>
           {isEdit ? '수정' : '생성'}
-        </Button>
+        </DefaultButton>
       </div>
     </Form>
   );

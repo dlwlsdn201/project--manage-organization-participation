@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/useAppStore';
 import { Member } from '@/entities';
-import { Button, Table, Checkbox, message, Space } from 'antd';
+import { Table, Checkbox, message, Space } from 'antd';
 import { UserPlus } from 'lucide-react';
+import { DefaultButton } from '@/shared/ui/Button';
 
 interface ParticipantManagerProps {
   eventId: string;
@@ -126,10 +127,8 @@ export const ParticipantManager = ({
           </p>
         </div>
         <Space className="w-full mobile:w-auto">
-          <Button onClick={onCancel} className="w-full mobile:w-auto">
-            취소
-          </Button>
-          <Button
+          <DefaultButton onClick={onCancel}>취소</DefaultButton>
+          <DefaultButton
             type="primary"
             onClick={handleSave}
             loading={loading}
@@ -137,7 +136,7 @@ export const ParticipantManager = ({
             className="w-full mobile:w-auto"
           >
             저장
-          </Button>
+          </DefaultButton>
         </Space>
       </div>
 

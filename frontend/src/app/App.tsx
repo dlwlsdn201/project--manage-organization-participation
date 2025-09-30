@@ -8,6 +8,7 @@ import { Organization } from '../entities/organization';
 import { LoadingSpinner } from '../shared/ui/Spinner';
 import { message } from 'antd';
 import { TabButton } from '../shared/ui/Button';
+import { DefaultButton } from '@/shared/ui/Button';
 
 type TabType = 'organizations' | 'events' | 'analytics';
 
@@ -105,7 +106,7 @@ function App() {
       </header>
 
       <main className="flex-1 p-4 mobile:p-[1rem] w-full">
-        <nav className="flex flex-col mobile:flex-row gap-2 mobile:gap-2 mb-8 border-b-2 border-slate-200">
+        <nav className="flex mobile:flex-col flex-row gap-2 mobile:gap-2 mb-8 border-b-2 border-slate-200">
           <TabButton
             isActive={activeTab === 'organizations'}
             onClick={() => setActiveTab('organizations')}
@@ -138,15 +139,14 @@ function App() {
                 {selectedOrganization.name}
               </strong>
             </div>
-            <button
-              className="px-3 py-1.5 text-xs mobile:text-sm bg-transparent text-slate-600 border border-gray-300 rounded hover:bg-gray-50 hover:border-gray-400 transition-colors w-full mobile:w-auto"
+            <DefaultButton
               onClick={() => {
                 setSelectedOrganization(null);
                 setActiveTab('organizations');
               }}
             >
               조직 선택 해제
-            </button>
+            </DefaultButton>
           </div>
         )}
 

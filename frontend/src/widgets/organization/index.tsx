@@ -3,9 +3,10 @@ import { useOrganizationStore } from '@/features/organization/lib';
 import { Organization } from '@/entities';
 import { OrganizationForm } from '@/features/organization';
 import { Edit, Trash2, Plus, Users } from 'lucide-react';
-import { Button, Modal, message } from 'antd';
+import { Modal, message } from 'antd';
 import { EmptyState } from '@/shared/ui/Empty';
 import { LoadingSpinner } from '@/shared/ui/Spinner';
+import { DefaultButton } from '@/shared/ui/Button';
 
 interface OrganizationListProps {
   onEditOrganization: (organization: Organization) => void;
@@ -56,14 +57,13 @@ export function OrganizationList({
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">조직 목록</h2>
-        <Button
+        <DefaultButton
           onClick={handleAddOrganization}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
           icon={<Plus size={16} />}
           type="primary"
         >
           새 조직 추가
-        </Button>
+        </DefaultButton>
       </div>
 
       <div className="flex gap-4">
