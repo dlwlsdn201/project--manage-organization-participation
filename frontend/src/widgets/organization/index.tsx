@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { useOrganizationStore } from '@/features/organization/lib';
 import { Organization } from '@/entities';
 import { OrganizationForm } from '@/features/organization';
-import { LoadingSpinner, EmptyState } from '@/shared/ui';
 import { Edit, Trash2, Plus, Users } from 'lucide-react';
 import { Button, Modal, message } from 'antd';
+import { EmptyState } from '@/shared/ui/Empty';
+import { LoadingSpinner } from '@/shared/ui/Spinner';
 
 interface OrganizationListProps {
   onEditOrganization: (organization: Organization) => void;
@@ -97,7 +98,7 @@ export function OrganizationList({
                       setEditingOrganization(organization);
                       setIsModalVisible(true);
                     }}
-                    className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 text-gray-600 hover:text-primary-500 hover:bg-gray-100 rounded-lg transition-colors"
                     title="조직 편집"
                   >
                     <Edit size={16} />

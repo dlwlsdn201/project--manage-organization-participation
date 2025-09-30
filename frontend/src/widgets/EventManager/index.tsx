@@ -3,9 +3,10 @@ import { useAppStore } from '@/store/useAppStore';
 import { Event } from '@/entities';
 import { EventForm } from '@/features/EventForm';
 import { ParticipantManager } from '@/features/ParticipantManager';
-import { LoadingSpinner, EmptyState } from '@/shared/ui';
 import { Edit, Trash2, Plus, Users, Calendar, MapPin } from 'lucide-react';
 import { Modal, message, Popconfirm, Badge } from 'antd';
+import { EmptyState } from '@/shared/ui/Empty';
+import { LoadingSpinner } from '@/shared/ui/Spinner';
 
 interface EventManagerProps {
   organizationId: string;
@@ -124,7 +125,7 @@ export function EventManager({ organizationId }: EventManagerProps) {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEditEvent(event)}
-                    className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 text-gray-600 hover:text-primary-500 hover:bg-gray-100 rounded-lg transition-colors"
                     title="모임 편집"
                   >
                     <Edit size={16} />
