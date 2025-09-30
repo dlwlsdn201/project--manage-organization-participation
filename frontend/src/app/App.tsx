@@ -5,8 +5,9 @@ import { OrganizationList } from '../widgets/organization';
 import { EventManager } from '../widgets/EventManager';
 import { AttendanceTracker } from '../widgets/AttendanceTracker';
 import { Organization } from '../entities/organization';
-import { LoadingSpinner } from '../shared/ui';
+import { LoadingSpinner } from '../shared/ui/Spinner';
 import { message } from 'antd';
+import { TabButton } from '../shared/ui/Button';
 
 type TabType = 'organizations' | 'events' | 'analytics';
 
@@ -103,39 +104,28 @@ function App() {
         </div>
       </header>
 
-      <main className="flex-1 p-4 mobile:p-8 w-full">
+      <main className="flex-1 p-4 mobile:p-[1rem] w-full">
         <nav className="flex flex-col mobile:flex-row gap-2 mobile:gap-2 mb-8 border-b-2 border-slate-200">
-          <button
-            className={`px-3 mobile:px-6 py-2 mobile:py-3 font-medium text-sm mobile:text-base transition-all duration-200 border-b-2 flex items-center justify-center ${
-              activeTab === 'organizations'
-                ? 'text-primary-600 border-primary-600 bg-slate-50'
-                : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'
-            }`}
+          <TabButton
+            isActive={activeTab === 'organizations'}
             onClick={() => setActiveTab('organizations')}
           >
             조직 관리
-          </button>
+          </TabButton>
 
-          <button
-            className={`px-3 mobile:px-6 py-2 mobile:py-3 font-medium text-sm mobile:text-base transition-all duration-200 border-b-2 flex items-center justify-center ${
-              activeTab === 'events'
-                ? 'text-primary-600 border-primary-600 bg-slate-50'
-                : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'
-            }`}
+          <TabButton
+            isActive={activeTab === 'events'}
             onClick={() => setActiveTab('events')}
           >
             <span className="flex items-center gap-2">모임 관리</span>
-          </button>
-          <button
-            className={`px-3 mobile:px-6 py-2 mobile:py-3 font-medium text-sm mobile:text-base transition-all duration-200 border-b-2 flex items-center justify-center ${
-              activeTab === 'analytics'
-                ? 'text-primary-600 border-primary-600 bg-slate-50'
-                : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'
-            }`}
+          </TabButton>
+
+          <TabButton
+            isActive={activeTab === 'analytics'}
             onClick={() => setActiveTab('analytics')}
           >
             참여 분석
-          </button>
+          </TabButton>
         </nav>
 
         {selectedOrganization && (
