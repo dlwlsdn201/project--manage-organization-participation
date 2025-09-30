@@ -81,28 +81,32 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="flex justify-between items-center bg-white px-8 py-4 shadow-lg">
-        <h1 className="text-2xl font-semibold text-gray-900">
-          조직 참여 관리 시스템
-        </h1>
-        <div className="flex flex-col items-end gap-2">
+      <header className="flex flex-col mobile:flex-row justify-between items-start mobile:items-center bg-white px-4 mobile:px-8 py-4 shadow-lg gap-4 mobile:gap-0">
+        <span className="text-lg mobile:text-xl font-semibold text-gray-900">
+          소모임 활동 관리 시스템
+        </span>
+        <div className="flex flex-col items-start mobile:items-end gap-2 w-full mobile:w-auto">
           {user && (
-            <div className="text-sm text-slate-600">
+            <div className="text-xs mobile:text-sm text-slate-600">
               안녕하세요, {user.name}님!
             </div>
           )}
           {selectedOrganization && (
-            <div className="text-sm text-slate-900 px-4 py-2 bg-sky-50 border border-sky-200 rounded-lg">
-              현재 선택된 조직: <strong>{selectedOrganization.name}</strong>
+            <div className="text-xs mobile:text-sm text-slate-900 px-3 mobile:px-4 py-2 bg-sky-50 border border-sky-200 rounded-lg w-full mobile:w-auto">
+              <span className="mobile:hidden">선택된 조직:</span>
+              <span className="hidden mobile:inline">
+                현재 선택된 조직:
+              </span>{' '}
+              <strong>{selectedOrganization.name}</strong>
             </div>
           )}
         </div>
       </header>
 
-      <main className="flex-1 p-8 w-full">
-        <nav className="flex gap-2 mb-8 border-b-2 border-slate-200">
+      <main className="flex-1 p-4 mobile:p-8 w-full">
+        <nav className="flex flex-col mobile:flex-row gap-2 mobile:gap-2 mb-8 border-b-2 border-slate-200">
           <button
-            className={`px-6 py-3 font-medium text-base transition-all duration-200 border-b-2 flex items-center justify-center ${
+            className={`px-3 mobile:px-6 py-2 mobile:py-3 font-medium text-sm mobile:text-base transition-all duration-200 border-b-2 flex items-center justify-center ${
               activeTab === 'organizations'
                 ? 'text-primary-600 border-primary-600 bg-slate-50'
                 : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'
@@ -113,7 +117,7 @@ function App() {
           </button>
 
           <button
-            className={`px-6 py-3 font-medium text-base transition-all duration-200 border-b-2 flex items-center justify-center ${
+            className={`px-3 mobile:px-6 py-2 mobile:py-3 font-medium text-sm mobile:text-base transition-all duration-200 border-b-2 flex items-center justify-center ${
               activeTab === 'events'
                 ? 'text-primary-600 border-primary-600 bg-slate-50'
                 : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'
@@ -123,7 +127,7 @@ function App() {
             <span className="flex items-center gap-2">모임 관리</span>
           </button>
           <button
-            className={`px-6 py-3 font-medium text-base transition-all duration-200 border-b-2 flex items-center justify-center ${
+            className={`px-3 mobile:px-6 py-2 mobile:py-3 font-medium text-sm mobile:text-base transition-all duration-200 border-b-2 flex items-center justify-center ${
               activeTab === 'analytics'
                 ? 'text-primary-600 border-primary-600 bg-slate-50'
                 : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'
@@ -135,13 +139,17 @@ function App() {
         </nav>
 
         {selectedOrganization && (
-          <div className="flex items-center gap-4 p-4 bg-slate-50 border border-slate-200 rounded-lg mb-4">
-            <span className="text-sm text-slate-600">현재 관리 중인 조직:</span>
-            <strong className="text-base text-slate-900">
-              {selectedOrganization.name}
-            </strong>
+          <div className="flex flex-col mobile:flex-row items-start mobile:items-center gap-2 mobile:gap-4 p-3 mobile:p-4 bg-slate-50 border border-slate-200 rounded-lg mb-4">
+            <div className="flex flex-col mobile:flex-row items-start mobile:items-center gap-1 mobile:gap-4 flex-1">
+              <span className="text-xs mobile:text-sm text-slate-600">
+                현재 관리 중인 조직:
+              </span>
+              <strong className="text-sm mobile:text-base text-slate-900">
+                {selectedOrganization.name}
+              </strong>
+            </div>
             <button
-              className="px-3 py-1.5 text-sm bg-transparent text-slate-600 border border-gray-300 rounded hover:bg-gray-50 hover:border-gray-400 transition-colors"
+              className="px-3 py-1.5 text-xs mobile:text-sm bg-transparent text-slate-600 border border-gray-300 rounded hover:bg-gray-50 hover:border-gray-400 transition-colors w-full mobile:w-auto"
               onClick={() => {
                 setSelectedOrganization(null);
                 setActiveTab('organizations');

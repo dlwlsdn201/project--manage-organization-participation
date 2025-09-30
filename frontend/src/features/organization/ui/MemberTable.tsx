@@ -46,20 +46,21 @@ export const MemberTable = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">
+      <div className="flex flex-col mobile:flex-row justify-between items-start mobile:items-center gap-2 mobile:gap-0">
+        <h3 className="text-base mobile:text-lg font-semibold">
           구성원 목록
-          <span className="text-sm text-gray-500 ml-2">
+          <span className="text-xs mobile:text-sm text-gray-500 ml-2 block mobile:inline">
             ({organizationMembersCount}명 등록됨
             {newMembersCount > 0 && `, ${newMembersCount}명 추가 예정`})
           </span>
         </h3>
-        <Space>
+        <Space className="w-full mobile:w-auto">
           {!editing ? (
             <Button
               icon={<Plus size={16} />}
               type="primary"
               onClick={onAddNewRow}
+              className="w-full mobile:w-auto"
             >
               신규 추가
             </Button>
@@ -69,6 +70,7 @@ export const MemberTable = ({
               loading={memberLoading}
               onClick={onSaveAll}
               disabled={newMembersCount === 0}
+              className="w-full mobile:w-auto"
             >
               모두 저장
             </Button>
@@ -78,7 +80,7 @@ export const MemberTable = ({
 
       {newMembersCount > 0 && (
         <div className="bg-blue-50 p-3 rounded-lg">
-          <div className="text-sm text-blue-700 mb-2">
+          <div className="text-xs mobile:text-sm text-blue-700 mb-2">
             💡 <strong>인라인 편집 모드</strong>
           </div>
           <div className="text-xs text-blue-600">
@@ -99,7 +101,7 @@ export const MemberTable = ({
         rowKey="_id"
         pagination={false}
         size="small"
-        scroll={{ y: 400 }}
+        scroll={{ x: 'max-content', y: 400 }}
         rowClassName={(record) =>
           record._id.startsWith('new-') ? 'bg-green-50' : ''
         }

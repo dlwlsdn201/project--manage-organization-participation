@@ -115,21 +115,26 @@ export const ParticipantManager = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-semibold">{event.title}</h3>
-          <p className="text-sm text-gray-500">
+      <div className="flex flex-col mobile:flex-row justify-between items-start mobile:items-center gap-4 mobile:gap-0">
+        <div className="flex-1">
+          <h3 className="text-base mobile:text-lg font-semibold">
+            {event.title}
+          </h3>
+          <p className="text-xs mobile:text-sm text-gray-500">
             현재 참가자: {selectedParticipants.length}명
             {event.maxParticipants && ` / 최대 ${event.maxParticipants}명`}
           </p>
         </div>
-        <Space>
-          <Button onClick={onCancel}>취소</Button>
+        <Space className="w-full mobile:w-auto">
+          <Button onClick={onCancel} className="w-full mobile:w-auto">
+            취소
+          </Button>
           <Button
             type="primary"
             onClick={handleSave}
             loading={loading}
             icon={<UserPlus size={16} />}
+            className="w-full mobile:w-auto"
           >
             저장
           </Button>
@@ -142,7 +147,7 @@ export const ParticipantManager = ({
         rowKey="_id"
         pagination={false}
         size="small"
-        scroll={{ y: 400 }}
+        scroll={{ x: 'max-content', y: 400 }}
       />
     </div>
   );
