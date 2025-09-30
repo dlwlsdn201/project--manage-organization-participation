@@ -9,7 +9,7 @@ interface AttendanceTrackerProps {
 }
 
 export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
-  const { events } = useAppStore();
+  const { events, members } = useAppStore();
   const [dateRange, setDateRange] = useState<{
     startDate: Date | null;
     endDate: Date | null;
@@ -23,8 +23,8 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
   }, [events, organizationId]);
 
   const organizationMembers = useMemo(() => {
-    return [];
-  }, []);
+    return members.filter((member) => member.organizationId === organizationId);
+  }, [members, organizationId]);
 
   const filteredEvents = useMemo(() => {
     if (!dateRange.startDate && !dateRange.endDate) {
@@ -82,7 +82,7 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
     return organizationMembers
       .map((member) => {
         const memberEvents = filteredEvents.filter((event) =>
-          event.attendees.includes(member._id)
+          event.attendees.some((attendee) => attendee.memberId === member._id)
         );
 
         const attendanceRate =
@@ -260,16 +260,16 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 mobile:px-4 py-3 mobile:py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   모임명
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 mobile:px-4 py-3 mobile:py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   날짜
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 mobile:px-4 py-3 mobile:py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   참여자 수
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 mobile:px-4 py-3 mobile:py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   참여율
                 </th>
               </tr>

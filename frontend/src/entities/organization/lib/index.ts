@@ -134,7 +134,7 @@ export const createInitialOrganization = (
     type: 'club',
     maxMembers: 100,
     settings: {
-      participationRule: 'open',
+      participationRule: '제한없음',
     },
     createdBy: createdBy,
   };

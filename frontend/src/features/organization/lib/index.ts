@@ -26,23 +26,31 @@ export const useOrganizationStore = create<OrganizationFeatureStore>()(
 
       // 조직 생성
       createOrganization: async (organizationData) => {
+        console.log('createOrganization 호출됨:', organizationData);
         const { errors, isValid } = validateOrganization(organizationData);
         if (!isValid) {
+          console.error('유효성 검사 실패:', errors);
           set({ error: '유효성 검사 실패: ' + errors.join(', ') });
           throw new Error('Validation failed');
         }
         set({ loading: true, error: null });
         try {
+          console.log('API 호출 시작:', {
+            ...organizationData,
+            currentMembers: 0,
+          });
           const newOrg = await organizationApi.create({
             ...organizationData,
             currentMembers: 0,
           });
+          console.log('API 응답 성공:', newOrg);
           set((state) => ({
             organizations: [...state.organizations, newOrg],
             loading: false,
           }));
           return newOrg;
         } catch (error: unknown) {
+          console.error('API 호출 실패:', error);
           const message =
             error instanceof Error ? error.message : '조직 생성 실패';
           set({ error: message, loading: false });

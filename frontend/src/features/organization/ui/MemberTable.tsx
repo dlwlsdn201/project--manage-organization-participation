@@ -1,7 +1,8 @@
-import { Table, Button, Space } from 'antd';
+import { Table, Space } from 'antd';
 import { Plus } from 'lucide-react';
 import { Member } from '@/entities';
 import { createMemberColumns } from '@/features/organization/config/tableColumns';
+import { DefaultButton } from '@/shared/ui/Button';
 
 interface MemberTableProps {
   allMembers: Member[];
@@ -17,6 +18,7 @@ interface MemberTableProps {
   onSaveRow: (key: string) => void;
   onCancelEdit: (key: string) => void;
   onDeleteMember: (memberId: string) => void;
+  onCancelEditing: () => void;
 }
 
 export const MemberTable = ({
@@ -33,6 +35,7 @@ export const MemberTable = ({
   onSaveRow,
   onCancelEdit,
   onDeleteMember,
+  onCancelEditing,
 }: MemberTableProps) => {
   const memberColumns = createMemberColumns({
     editing,
@@ -46,34 +49,39 @@ export const MemberTable = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col mobile:flex-row justify-between items-start mobile:items-center gap-2 mobile:gap-0">
-        <h3 className="text-base mobile:text-lg font-semibold">
+      <div className="flex flex-row mobile:flex-col justify-between items-start mobile:items-start gap-2 ">
+        <h3 className="text-base mobile:text-lg font-semibold shrink-0">
           구성원 목록
           <span className="text-xs mobile:text-sm text-gray-500 ml-2 block mobile:inline">
             ({organizationMembersCount}명 등록됨
             {newMembersCount > 0 && `, ${newMembersCount}명 추가 예정`})
           </span>
         </h3>
-        <Space className="w-full mobile:w-auto">
+        <Space className="w-full flex-row justify-end">
           {!editing ? (
-            <Button
+            <DefaultButton
               icon={<Plus size={16} />}
               type="primary"
               onClick={onAddNewRow}
               className="w-full mobile:w-auto"
             >
               신규 추가
-            </Button>
+            </DefaultButton>
           ) : (
-            <Button
-              type="primary"
-              loading={memberLoading}
-              onClick={onSaveAll}
-              disabled={newMembersCount === 0}
-              className="w-full mobile:w-auto"
-            >
-              모두 저장
-            </Button>
+            <>
+              <DefaultButton icon={<Plus size={16} />} onClick={onAddNewRow}>
+                추가
+              </DefaultButton>
+              <DefaultButton
+                type="primary"
+                loading={memberLoading}
+                onClick={onSaveAll}
+                disabled={newMembersCount === 0}
+              >
+                모두 저장
+              </DefaultButton>
+              <DefaultButton onClick={onCancelEditing}>취소</DefaultButton>
+            </>
           )}
         </Space>
       </div>

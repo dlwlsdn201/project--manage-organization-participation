@@ -5,6 +5,7 @@ import { Form, Input, Select, DatePicker, message } from 'antd';
 import dayjs from 'dayjs';
 import ko from 'antd/es/date-picker/locale/ko_KR';
 import { DefaultButton } from '@/shared/ui/Button';
+import { getCurrentUserId } from '@/shared/lib/user-utils';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -38,6 +39,11 @@ export function EventForm({
         hostId: event.hostId,
         maxParticipants: event.maxParticipants,
       });
+    } else {
+      // 새 모임 생성 시 hostId를 undefined로 초기화
+      form.setFieldsValue({
+        hostId: undefined,
+      });
     }
   }, [event, form]);
 
@@ -46,6 +52,7 @@ export function EventForm({
     description: string;
     date: { toDate: () => Date };
     location: string;
+    hostId: string;
     maxParticipants?: number;
   }) => {
     setLoading(true);
@@ -54,11 +61,11 @@ export function EventForm({
         ...values,
         date: values.date.toDate(),
         organizationId,
-        hostId: 'current_user',
+        hostId: values.hostId,
         currentParticipants: event?.currentParticipants || 0,
         status: 'published' as const,
         attendees: event?.attendees || [],
-        createdBy: 'current_user',
+        createdBy: getCurrentUserId(),
       };
 
       if (isEditing && event) {

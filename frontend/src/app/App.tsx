@@ -6,6 +6,7 @@ import { EventManager } from '../widgets/EventManager';
 import { AttendanceTracker } from '../widgets/AttendanceTracker';
 import { Organization } from '../entities/organization';
 import { LoadingSpinner } from '../shared/ui/Spinner';
+import { getCurrentUser } from '../shared/lib/user-utils';
 import { message } from 'antd';
 import { TabButton } from '../shared/ui/Button';
 import { DefaultButton } from '@/shared/ui/Button';
@@ -26,15 +27,8 @@ function App() {
       try {
         await loadInitialData();
 
-        // 기본 사용자 설정 (임시)
-        setUser({
-          id: 'current_user',
-          name: '관리자',
-          email: 'admin@example.com',
-          role: 'admin',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+        // 기본 사용자 설정
+        setUser(getCurrentUser());
 
         message.success('데이터 로딩이 완료되었습니다.');
       } catch (error) {
@@ -83,8 +77,8 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="flex flex-col mobile:flex-row justify-between items-start mobile:items-center bg-white px-4 mobile:px-8 py-4 shadow-lg gap-4 mobile:gap-0">
-        <span className="text-lg mobile:text-xl font-semibold text-gray-900">
+      <header className="flex flex-col mobile:gap-x-4 mobile:flex-row justify-between items-start mobile:items-center bg-white px-4 mobile:px-8 py-4 shadow-lg gap-4 mobile:gap-0">
+        <span className="text-lg mobile:text-xl font-semibold text-gray-900 shrink-0">
           소모임 활동 관리 시스템
         </span>
         <div className="flex flex-col items-start mobile:items-end gap-2 w-full mobile:w-auto">
@@ -94,11 +88,8 @@ function App() {
             </div>
           )}
           {selectedOrganization && (
-            <div className="text-xs mobile:text-sm text-slate-900 px-3 mobile:px-4 py-2 bg-sky-50 border border-sky-200 rounded-lg w-full mobile:w-auto">
-              <span className="mobile:hidden">선택된 조직:</span>
-              <span className="hidden mobile:inline">
-                현재 선택된 조직:
-              </span>{' '}
+            <div className="text-xs mobile:text-sm text-slate-900 px-3 mobile:px-4 py-2 bg-primary-50 border border-primary-100 rounded-lg w-full mobile:w-auto">
+              <span className="break-keep">선택된 조직:</span>{' '}
               <strong>{selectedOrganization.name}</strong>
             </div>
           )}

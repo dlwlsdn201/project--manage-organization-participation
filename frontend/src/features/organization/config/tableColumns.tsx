@@ -3,6 +3,7 @@ import { Edit, Trash2 } from 'lucide-react';
 import { Member } from '@/entities';
 import dayjs from 'dayjs';
 import ko from 'antd/es/date-picker/locale/ko_KR';
+import { DefaultButton } from '@/shared/ui/Button';
 
 const { Option } = Select;
 
@@ -187,16 +188,19 @@ export const createMemberColumns = ({
       if (editing && shouldEditMode) {
         return (
           <Space>
-            <Button
-              size="small"
+            <DefaultButton
               type="primary"
+              size="small"
               onClick={() => onSaveRow(record._id)}
             >
               저장
-            </Button>
-            <Button size="small" onClick={() => onCancelEdit(record._id)}>
+            </DefaultButton>
+            <DefaultButton
+              size="small"
+              onClick={() => onCancelEdit(record._id)}
+            >
               취소
-            </Button>
+            </DefaultButton>
           </Space>
         );
       }

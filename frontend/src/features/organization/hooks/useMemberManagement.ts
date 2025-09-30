@@ -32,6 +32,7 @@ export const useMemberManagement = ({
       ...member,
       _id: `new-${index}`, // 임시 ID
       organizationId: organization?._id || '',
+      status: 'active' as const,
       joinedAt: new Date(),
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -82,6 +83,8 @@ export const useMemberManagement = ({
           birthYear: memberData.birthYear!,
           district: memberData.district!,
           organizationId: organization._id,
+          status: 'active',
+          joinedAt: new Date(),
         });
 
         // 새 구성원 목록에서 제거
@@ -201,6 +204,8 @@ export const useMemberManagement = ({
           birthYear: memberData.birthYear!,
           district: memberData.district!,
           organizationId: organization._id,
+          status: 'active',
+          joinedAt: new Date(),
         })
       );
       await Promise.all(addPromises);
@@ -227,9 +232,10 @@ export const useMemberManagement = ({
       await Promise.all(updatePromises);
       updatedCount = updatePromises.length;
 
-      // 상태 초기화
+      // 상태 초기화 (새 멤버만 초기화, 편집 모드는 유지)
       setNewMembers([]);
       setEditedMembers(new Map());
+      // 편집 모드는 유지하여 연속으로 멤버 추가 가능
 
       // 성공 메시지
       const messages = [];
@@ -259,6 +265,14 @@ export const useMemberManagement = ({
     } catch {
       message.error('구성원 삭제 중 오류가 발생했습니다.');
     }
+  };
+
+  // 편집 모드 종료
+  const handleCancelEditing = () => {
+    setEditing(false);
+    setNewMembers([]);
+    setEditedMembers(new Map());
+    message.info('편집이 취소되었습니다.');
   };
 
   // 멤버 입력 데이터 검증
@@ -304,6 +318,7 @@ export const useMemberManagement = ({
     handleInlineFieldChange,
     handleSaveAll,
     handleDeleteMember,
+    handleCancelEditing,
     checkValidMemberInputData,
   };
 };

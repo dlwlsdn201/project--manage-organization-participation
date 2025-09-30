@@ -97,7 +97,7 @@ describe('App 컴포넌트', () => {
 
     await waitFor(() => {
       expect(mockStore.setUser).toHaveBeenCalledWith({
-        id: 'current_user',
+        id: 'test_user_123',
         name: '관리자',
         email: 'admin@example.com',
         role: 'admin',

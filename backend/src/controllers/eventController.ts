@@ -164,6 +164,8 @@ export const updateEvent = asyncHandler(
     const { id } = req.params;
     const updateData = req.body;
 
+    console.log('이벤트 수정 요청:', { id, updateData });
+
     const event = await Event.findById(id);
     if (!event) {
       throw new AppError('이벤트를 찾을 수 없습니다.', 404);
@@ -177,18 +179,89 @@ export const updateEvent = asyncHandler(
       'location',
       'hostId',
       'maxParticipants',
+      'currentParticipants',
       'status',
       'attendees',
     ];
 
     allowedFields.forEach((field) => {
       if (updateData[field] !== undefined) {
-        (event as any)[field] = updateData[field];
+        console.log(`업데이트 필드 ${field}:`, updateData[field]);
+        console.log(`업데이트 필드 ${field} 타입:`, typeof updateData[field]);
+        console.log(
+          `업데이트 필드 ${field} 배열 여부:`,
+          Array.isArray(updateData[field])
+        );
+
+        // attendees 필드 특별 처리
+        if (field === 'attendees') {
+          let attendeesData = updateData[field];
+          console.log('attendees 원본 데이터:', attendeesData);
+          console.log('attendees 원본 타입:', typeof attendeesData);
+
+          // 문자열로 전달된 경우 JSON 파싱 시도
+          if (typeof attendeesData === 'string') {
+            console.log('attendees가 문자열로 전달됨, JSON 파싱 시도');
+            try {
+              attendeesData = JSON.parse(attendeesData);
+              console.log('JSON 파싱 성공:', attendeesData);
+            } catch (parseError) {
+              console.error('attendees JSON 파싱 오류:', parseError);
+              throw new AppError(
+                'attendees 데이터 형식이 올바르지 않습니다.',
+                400
+              );
+            }
+          }
+
+          // 배열인지 확인
+          if (Array.isArray(attendeesData)) {
+            // joinedAt 필드를 Date 객체로 변환하고 유효성 검사
+            const processedAttendees = attendeesData.map((attendee: any) => {
+              if (!attendee.memberId) {
+                throw new AppError('attendee.memberId는 필수입니다.', 400);
+              }
+              if (
+                !attendee.status ||
+                !['confirmed', 'pending', 'declined'].includes(attendee.status)
+              ) {
+                attendee.status = 'confirmed';
+              }
+              return {
+                memberId: attendee.memberId,
+                status: attendee.status,
+                joinedAt: attendee.joinedAt
+                  ? new Date(attendee.joinedAt)
+                  : new Date(),
+              };
+            });
+            (event as any)[field] = processedAttendees;
+            event.markModified('attendees');
+          } else {
+            throw new AppError('attendees는 배열이어야 합니다.', 400);
+          }
+        } else {
+          (event as any)[field] = updateData[field];
+        }
       }
     });
 
     event.updatedAt = new Date();
-    const updatedEvent = await event.save();
+
+    let updatedEvent;
+    try {
+      updatedEvent = await event.save();
+      console.log('이벤트 저장 성공:', updatedEvent);
+    } catch (saveError: any) {
+      console.error('이벤트 저장 오류:', saveError);
+      console.error('오류 상세 정보:', {
+        name: saveError.name,
+        message: saveError.message,
+        errors: saveError.errors,
+        code: saveError.code,
+      });
+      throw new AppError(`이벤트 저장 실패: ${saveError.message}`, 400);
+    }
 
     res.json({
       success: true,
@@ -239,11 +312,17 @@ export const updateEventAttendance = asyncHandler(
     }
 
     if (action === 'add') {
-      if (!event.attendees.includes(memberId)) {
-        event.attendees.push(memberId);
+      if (!event.attendees.some((attendee) => attendee.memberId === memberId)) {
+        event.attendees.push({
+          memberId,
+          status: 'confirmed',
+          joinedAt: new Date(),
+        });
       }
     } else if (action === 'remove') {
-      event.attendees = event.attendees.filter((id) => id !== memberId);
+      event.attendees = event.attendees.filter(
+        (attendee) => attendee.memberId !== memberId
+      );
     }
 
     event.updatedAt = new Date();

@@ -16,9 +16,31 @@ interface OrganizationBasicFormProps {
   onSubmit: (values: {
     name: string;
     description: string;
-    type: string;
-    maxMembers: number;
-    settings: { participationRule: string };
+    type:
+      | 'club'
+      | 'study'
+      | 'culture'
+      | 'sports'
+      | 'volunteer'
+      | 'business'
+      | 'social'
+      | 'other';
+    location?: string;
+    maxMembers?: number;
+    settings: {
+      participationRule:
+        | '제한없음'
+        | '1'
+        | '2'
+        | '3'
+        | '4'
+        | '5'
+        | '6'
+        | '7'
+        | '8'
+        | '9'
+        | '10';
+    };
   }) => void;
   onCancel: () => void;
 }

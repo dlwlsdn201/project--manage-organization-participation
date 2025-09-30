@@ -16,7 +16,18 @@ export interface IUser extends BaseDocument {
 
 // 조직 설정 타입
 export interface IOrganizationSettings {
-  participationRule: string; // '제한없음' | '1' | '2' | ... | '10'
+  participationRule:
+    | '제한없음'
+    | '1'
+    | '2'
+    | '3'
+    | '4'
+    | '5'
+    | '6'
+    | '7'
+    | '8'
+    | '9'
+    | '10';
 }
 
 // 조직 타입
@@ -51,6 +62,13 @@ export interface IMember extends BaseDocument {
   joinedAt: Date;
 }
 
+// 참가자 타입
+export interface IEventAttendee {
+  memberId: string;
+  status: 'confirmed' | 'pending' | 'declined';
+  joinedAt: Date;
+}
+
 // 이벤트 타입
 export interface IEvent extends BaseDocument {
   organizationId: string;
@@ -62,7 +80,7 @@ export interface IEvent extends BaseDocument {
   maxParticipants?: number;
   currentParticipants: number;
   status: 'draft' | 'published' | 'ongoing' | 'completed' | 'cancelled';
-  attendees: string[];
+  attendees: IEventAttendee[];
   createdBy: string;
 }
 

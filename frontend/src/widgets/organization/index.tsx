@@ -56,11 +56,14 @@ export function OrganizationList({
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">조직 목록</h2>
+        <span className="text-2xl mobile:text-xl font-bold text-gray-900">
+          조직 목록
+        </span>
         <DefaultButton
           onClick={handleAddOrganization}
           icon={<Plus size={16} />}
           type="primary"
+          size="middle"
         >
           새 조직 추가
         </DefaultButton>

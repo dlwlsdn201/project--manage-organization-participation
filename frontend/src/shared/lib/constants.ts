@@ -12,12 +12,19 @@ export const ORGANIZATION_TYPES = [
   { value: 'other', label: '기타' },
 ] as const;
 
-// 참여 규칙
+// 참여 규칙 (월 참여 횟수)
 export const PARTICIPATION_RULES = [
   { value: '제한없음', label: '제한없음' },
-  { value: '사전신청', label: '사전신청 필요' },
-  { value: '승인제', label: '승인제' },
-  { value: '회원만', label: '회원만 참여' },
+  { value: '1', label: '월 1회' },
+  { value: '2', label: '월 2회' },
+  { value: '3', label: '월 3회' },
+  { value: '4', label: '월 4회' },
+  { value: '5', label: '월 5회' },
+  { value: '6', label: '월 6회' },
+  { value: '7', label: '월 7회' },
+  { value: '8', label: '월 8회' },
+  { value: '9', label: '월 9회' },
+  { value: '10', label: '월 10회' },
 ] as const;
 
 // 이벤트 상태

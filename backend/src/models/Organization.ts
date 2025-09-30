@@ -68,7 +68,7 @@ const organizationSchema = new Schema<IOrganization>(
       type: organizationSettingsSchema,
       required: true,
       default: () => ({ participationRule: '제한없음' }),
-    },
+    } as any,
     createdBy: {
       type: String,
       required: [true, '생성자 정보는 필수입니다.'],
@@ -94,14 +94,17 @@ organizationSchema.index({ createdAt: -1 });
 
 // 가상 필드
 organizationSchema.virtual('memberCount').get(function () {
-  return this.currentMembers;
+  return (this as any).currentMembers;
 });
 
 // 미들웨어
 organizationSchema.pre('save', function (next) {
   // maxMembers보다 currentMembers가 많으면 조정
-  if (this.maxMembers && this.currentMembers > this.maxMembers) {
-    this.currentMembers = this.maxMembers;
+  if (
+    (this as any).maxMembers &&
+    (this as any).currentMembers > (this as any).maxMembers
+  ) {
+    (this as any).currentMembers = (this as any).maxMembers;
   }
   next();
 });

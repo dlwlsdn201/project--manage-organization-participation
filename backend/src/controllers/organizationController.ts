@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Organization, Member } from '../models/index.js';
 import { ApiResponse, PaginationQuery } from '../types/index.js';
 import { asyncHandler, AppError } from '../middleware/errorHandler.js';
+import { extractUserIdFromRequest } from '../utils/user-utils.js';
 
 // 모든 조직 조회
 export const getAllOrganizations = asyncHandler(
@@ -76,7 +77,7 @@ export const createOrganization = asyncHandler(
 
     const organization = new Organization({
       ...organizationData,
-      createdBy: 'current_user', // 실제로는 JWT에서 가져올 예정
+      createdBy: extractUserIdFromRequest(req),
     });
 
     await organization.save();

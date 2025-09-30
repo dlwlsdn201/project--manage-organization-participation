@@ -62,12 +62,27 @@ const eventSchema = new Schema<IEvent>(
       },
       default: 'published',
     },
-    attendees: [
-      {
-        type: String,
-        ref: 'Member',
-      },
-    ],
+    attendees: {
+      type: [
+        {
+          memberId: {
+            type: String,
+            ref: 'Member',
+            required: true,
+          },
+          status: {
+            type: String,
+            enum: ['confirmed', 'pending', 'declined'],
+            default: 'confirmed',
+          },
+          joinedAt: {
+            type: Date,
+            default: Date.now,
+          },
+        },
+      ],
+      default: [],
+    },
     createdBy: {
       type: String,
       required: [true, '생성자 정보는 필수입니다.'],

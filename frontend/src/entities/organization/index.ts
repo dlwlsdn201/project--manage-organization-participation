@@ -23,5 +23,16 @@ export interface Organization {
 }
 
 export interface OrganizationSettings {
-  participationRule: string;
+  participationRule:
+    | '제한없음'
+    | '1'
+    | '2'
+    | '3'
+    | '4'
+    | '5'
+    | '6'
+    | '7'
+    | '8'
+    | '9'
+    | '10';
 }

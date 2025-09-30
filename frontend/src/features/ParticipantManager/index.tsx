@@ -61,14 +61,37 @@ export const ParticipantManager = ({
 
     setLoading(true);
     try {
+      console.log('참가자 데이터 전송:', {
+        eventId: event._id,
+        attendees: selectedParticipants,
+        currentParticipants: selectedParticipants.length,
+      });
+
+      console.log('전송할 attendees 데이터:', selectedParticipants);
+      console.log('전송할 attendees 타입:', typeof selectedParticipants);
+      console.log(
+        '전송할 attendees 배열 여부:',
+        Array.isArray(selectedParticipants)
+      );
+
       await updateEvent(event._id, {
         attendees: selectedParticipants,
         currentParticipants: selectedParticipants.length,
       });
       message.success('참가자 목록이 업데이트되었습니다.');
       onSuccess();
-    } catch {
-      message.error('참가자 목록 업데이트 중 오류가 발생했습니다.');
+    } catch (error: unknown) {
+      console.error('참가자 목록 업데이트 오류:', error);
+      console.error('오류 상세 정보:', {
+        message: error instanceof Error ? error.message : '알 수 없는 오류',
+        stack: error instanceof Error ? error.stack : undefined,
+        name: error instanceof Error ? error.name : 'Unknown',
+      });
+      const errorMessage =
+        error instanceof Error ? error.message : '알 수 없는 오류';
+      message.error(
+        `참가자 목록 업데이트 중 오류가 발생했습니다: ${errorMessage}`
+      );
     } finally {
       setLoading(false);
     }
@@ -126,14 +149,13 @@ export const ParticipantManager = ({
             {event.maxParticipants && ` / 최대 ${event.maxParticipants}명`}
           </p>
         </div>
-        <Space className="w-full mobile:w-auto">
+        <Space className="w-full mobile:w-auto flex justify-end">
           <DefaultButton onClick={onCancel}>취소</DefaultButton>
           <DefaultButton
             type="primary"
             onClick={handleSave}
             loading={loading}
             icon={<UserPlus size={16} />}
-            className="w-full mobile:w-auto"
           >
             저장
           </DefaultButton>

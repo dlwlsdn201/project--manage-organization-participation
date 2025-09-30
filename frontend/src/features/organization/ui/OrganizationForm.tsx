@@ -38,6 +38,7 @@ export const OrganizationForm = ({
     handleInlineFieldChange,
     handleSaveAll,
     handleDeleteMember,
+    handleCancelEditing,
   } = useMemberManagement({ organization });
 
   // 기본 정보 폼 컴포넌트
@@ -67,6 +68,7 @@ export const OrganizationForm = ({
       onSaveRow={handleSaveInlineRow}
       onCancelEdit={handleCancelInlineEdit}
       onDeleteMember={handleDeleteMember}
+      onCancelEditing={handleCancelEditing}
     />
   ) : undefined;
 
