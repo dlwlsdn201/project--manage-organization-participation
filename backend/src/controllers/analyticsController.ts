@@ -19,7 +19,7 @@ export const getOrganizationAnalytics = asyncHandler(
     const { startDate, endDate } = req.query;
 
     // 날짜 필터 구성
-    const dateFilter: any = {};
+    const dateFilter: { date?: { $gte: Date; $lte: Date } } = {};
     if (startDate && endDate) {
       dateFilter.date = {
         $gte: new Date(startDate),
@@ -104,6 +104,13 @@ export const getOrganizationAnalytics = asyncHandler(
     };
 
     // 월별 참여 통계
+    interface MonthlyStatItem {
+      month: string;
+      totalEvents: number;
+      totalAttendees: number;
+      averageAttendance: number;
+    }
+
     const monthlyStats = events.reduce(
       (acc, event) => {
         const month = dayjs(event.date).format('YYYY-MM');
@@ -121,7 +128,7 @@ export const getOrganizationAnalytics = asyncHandler(
           acc[month].totalAttendees / acc[month].totalEvents;
         return acc;
       },
-      {} as Record<string, any>
+      {} as Record<string, MonthlyStatItem>
     );
 
     // 이벤트별 참여 통계
@@ -175,7 +182,7 @@ export const getMemberAnalytics = asyncHandler(
     const { startDate, endDate } = req.query;
 
     // 날짜 필터 구성
-    const dateFilter: any = {};
+    const dateFilter: { date?: { $gte: Date; $lte: Date } } = {};
     if (startDate && endDate) {
       dateFilter.date = {
         $gte: new Date(startDate),
@@ -306,7 +313,7 @@ export const getSystemAnalytics = asyncHandler(
     const { startDate, endDate } = req.query;
 
     // 날짜 필터 구성
-    const dateFilter: any = {};
+    const dateFilter: { date?: { $gte: Date; $lte: Date } } = {};
     if (startDate && endDate) {
       dateFilter.date = {
         $gte: new Date(startDate),
@@ -366,6 +373,13 @@ export const getSystemAnalytics = asyncHandler(
     };
 
     // 월별 전체 통계
+    interface SystemMonthlyStatItem {
+      month: string;
+      totalEvents: number;
+      totalAttendance: number;
+      uniqueParticipants: Set<string>;
+    }
+
     const monthlyStats = events.reduce(
       (acc, event) => {
         const month = dayjs(event.date).format('YYYY-MM');
@@ -374,7 +388,7 @@ export const getSystemAnalytics = asyncHandler(
             month,
             totalEvents: 0,
             totalAttendance: 0,
-            uniqueParticipants: new Set(),
+            uniqueParticipants: new Set<string>(),
           };
         }
         acc[month].totalEvents += 1;
@@ -384,7 +398,7 @@ export const getSystemAnalytics = asyncHandler(
         );
         return acc;
       },
-      {} as Record<string, any>
+      {} as Record<string, SystemMonthlyStatItem>
     );
 
     // 월별 통계 정리

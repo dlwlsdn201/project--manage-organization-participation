@@ -26,10 +26,10 @@ export const getAllMembers = asyncHandler(
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    const sortObj: any = {};
+    const sortObj: Record<string, 1 | -1> = {};
     sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
-    const filter: any = {};
+    const filter: { organizationId?: string } = {};
     if (organizationId) {
       filter.organizationId = organizationId;
     }
@@ -84,9 +84,11 @@ export const getMembersByOrganization = asyncHandler(
       throw new AppError('조직을 찾을 수 없습니다.', 404);
     }
 
-    const filter: any = { organizationId };
+    const filter: { organizationId: string; status?: string } = {
+      organizationId,
+    };
     if (status) {
-      filter.status = status;
+      filter.status = status as string;
     }
 
     const members = await Member.find(filter).sort({ joinedAt: -1 }).lean();

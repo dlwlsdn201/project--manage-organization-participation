@@ -27,11 +27,11 @@ export const getAllEvents = asyncHandler(
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    const sortObj: any = {};
+    const sortObj: Record<string, 1 | -1> = {};
     sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     // 필터 조건 구성
-    const filter: any = {};
+    const filter: { organizationId?: string; status?: string } = {};
     if (organizationId) {
       filter.organizationId = organizationId;
     }
@@ -97,7 +97,7 @@ export const getEventsByOrganization = asyncHandler(
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    const sortObj: any = {};
+    const sortObj: Record<string, 1 | -1> = {};
     sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const [events, total] = await Promise.all([

@@ -20,7 +20,7 @@ export const getAllActivityLogs = asyncHandler(
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    const sortObj: any = {};
+    const sortObj: Record<string, 1 | -1> = {};
     sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const [logs, total] = await Promise.all([
@@ -82,7 +82,7 @@ export const getActivityLogsByOrganization = asyncHandler(
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    const sortObj: any = {};
+    const sortObj: Record<string, 1 | -1> = {};
     sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const [logs, total] = await Promise.all([
