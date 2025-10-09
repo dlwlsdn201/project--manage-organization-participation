@@ -43,6 +43,7 @@ export const createMemberColumns = ({
     title: '이름',
     dataIndex: 'name',
     key: 'name',
+    sorter: (a: Member, b: Member) => a.name.localeCompare(b.name),
     render: (_: unknown, record: Member) => {
       const { shouldEditMode } = checkEnableEditMode(record, editedMembers);
 

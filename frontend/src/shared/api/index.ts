@@ -13,7 +13,7 @@ export const initialDataApi = {
     try {
       const [organizations, members, events, activityLogs] = await Promise.all([
         apiClient.get<Organization[]>('/organizations'),
-        apiClient.get<Member[]>('/members'),
+        apiClient.get<Member[]>('/members?sortBy=name&sortOrder=asc'),
         apiClient.get<Event[]>('/events'),
         apiClient.get<ActivityLog[]>('/logs'),
       ]);
@@ -92,7 +92,7 @@ export const eventApi = {
 // 멤버 API
 export const memberApi = {
   async getAll(): Promise<Member[]> {
-    return apiClient.get<Member[]>('/members');
+    return apiClient.get<Member[]>('/members?sortBy=name&sortOrder=asc');
   },
 
   async getById(id: string): Promise<Member | null> {
