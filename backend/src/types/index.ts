@@ -62,13 +62,6 @@ export interface IMember extends BaseDocument {
   joinedAt: Date;
 }
 
-// 참가자 타입
-export interface IEventAttendee {
-  memberId: string;
-  status: 'confirmed' | 'pending' | 'declined';
-  joinedAt: Date;
-}
-
 // 이벤트 타입
 export interface IEvent extends BaseDocument {
   organizationId: string;
@@ -80,7 +73,7 @@ export interface IEvent extends BaseDocument {
   maxParticipants?: number;
   currentParticipants: number;
   status: 'draft' | 'published' | 'ongoing' | 'completed' | 'cancelled';
-  attendees: IEventAttendee[];
+  attendees: string[];
   createdBy: string;
 }
 
