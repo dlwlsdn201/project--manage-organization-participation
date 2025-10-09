@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-
+import { useOrganizationStore } from '../../features/organization/lib';
+import { useMemberStore } from '../../features/organization/lib/member-store';
 import { DateRangeFilter } from '../../features/DateRangeFilter';
 import { Calendar, Users, TrendingUp, AlertTriangle } from 'lucide-react';
 
@@ -9,7 +10,9 @@ interface AttendanceTrackerProps {
 }
 
 export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
-  const { events, members } = useAppStore();
+  const { events } = useAppStore();
+  const { organizations } = useOrganizationStore();
+  const { members } = useMemberStore();
   const [dateRange, setDateRange] = useState<{
     startDate: Date | null;
     endDate: Date | null;
@@ -17,6 +20,10 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
     startDate: null,
     endDate: null,
   });
+
+  const organization = useMemo(() => {
+    return organizations.find((org) => org._id === organizationId);
+  }, [organizations, organizationId]);
 
   const organizationEvents = useMemo(() => {
     return events.filter((event) => event.organizationId === organizationId);
@@ -79,6 +86,27 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
   }, [filteredEvents, organizationMembers]);
 
   const memberAttendanceStats = useMemo(() => {
+    // 참여 규칙 확인
+    const participationRule =
+      organization?.settings?.participationRule || '제한없음';
+    const requiredEventsPerMonth =
+      participationRule === '제한없음' ? 0 : parseInt(participationRule, 10);
+
+    // 날짜 범위의 개월 수 계산
+    const monthsInRange =
+      dateRange.startDate && dateRange.endDate
+        ? Math.max(
+            1,
+            Math.ceil(
+              (new Date(dateRange.endDate).getTime() -
+                new Date(dateRange.startDate).getTime()) /
+                (1000 * 60 * 60 * 24 * 30)
+            )
+          )
+        : 1;
+
+    const requiredTotalEvents = requiredEventsPerMonth * monthsInRange;
+
     return organizationMembers
       .map((member) => {
         const memberEvents = filteredEvents.filter((event) =>
@@ -90,16 +118,33 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
             ? (memberEvents.length / filteredEvents.length) * 100
             : 0;
 
+        // 상태 판단: 모임의 최소 월 참여 횟수 대비 실제 멤버 참여 횟수
+        let status: '위험' | '양호' | '우수' | '정상';
+        if (requiredEventsPerMonth > 0) {
+          if (memberEvents.length < requiredTotalEvents) {
+            status = '위험';
+          } else if (memberEvents.length === requiredTotalEvents) {
+            status = '양호';
+          } else {
+            status = '우수';
+          }
+        } else {
+          // 참여 규칙이 '제한없음'인 경우
+          status = '정상';
+        }
+
         return {
           member,
           attendedEvents: memberEvents.length,
           totalEvents: filteredEvents.length,
           attendanceRate: Math.round(attendanceRate * 10) / 10,
-          isAtRisk: attendanceRate < 50, // 50% 미만 참여 시 위험
+          status,
+          requiredEvents: requiredTotalEvents,
+          deficit: Math.max(0, requiredTotalEvents - memberEvents.length),
         };
       })
-      .sort((a, b) => a.attendanceRate - b.attendanceRate);
-  }, [organizationMembers, filteredEvents]);
+      .sort((a, b) => b.attendanceRate - a.attendanceRate); // 높은 참여율부터 정렬
+  }, [organizationMembers, filteredEvents, organization, dateRange]);
 
   return (
     <div className="space-y-6">
@@ -174,16 +219,16 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 mobile:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   멤버명
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 mobile:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   참여한 모임
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 mobile:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   참여율
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 mobile:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   상태
                 </th>
               </tr>
@@ -195,21 +240,21 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
                   attendedEvents,
                   totalEvents,
                   attendanceRate,
-                  isAtRisk,
+                  status,
                 }) => (
                   <tr key={member._id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 mobile:px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="text-sm font-medium text-gray-900">
                           {member.name}
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 mobile:px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                       {attendedEvents} / {totalEvents}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
+                    <td className="px-6 mobile:px-4 py-4 whitespace-nowrap">
+                      <div className="flex items-center mobile:w-[6rem]">
                         <div className="text-sm text-gray-900">
                           {attendanceRate}%
                         </div>
@@ -229,14 +274,25 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {isAtRisk ? (
+                    <td className="px-6 mobile:px-4 py-4 whitespace-nowrap">
+                      {status === '위험' && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                           <AlertTriangle className="h-3 w-3 mr-1" />
                           위험
                         </span>
-                      ) : (
+                      )}
+                      {status === '양호' && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          양호
+                        </span>
+                      )}
+                      {status === '우수' && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          우수
+                        </span>
+                      )}
+                      {status === '정상' && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                           정상
                         </span>
                       )}
@@ -284,18 +340,18 @@ export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
 
                 return (
                   <tr key={event._id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 mobile:px-4 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {event.title}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 mobile:px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(event.date).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 mobile:px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                       {event.currentParticipants} / {organizationMembers.length}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 mobile:px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="text-sm text-gray-900">
                           {Math.round(participationRate * 10) / 10}%
