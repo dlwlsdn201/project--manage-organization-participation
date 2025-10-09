@@ -10,21 +10,15 @@ export const getAllMembers = asyncHandler(
       {},
       ApiResponse,
       {},
-      PaginationQuery & { organizationId?: string }
+      { sortBy?: string; sortOrder?: 'asc' | 'desc'; organizationId?: string }
     >,
     res: Response<ApiResponse>
   ) => {
     const {
-      page = '1',
-      limit = '20',
       sortBy = 'joinedAt',
       sortOrder = 'desc',
       organizationId,
     } = req.query;
-
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const skip = (pageNum - 1) * limitNum;
 
     const sortObj: Record<string, 1 | -1> = {};
     sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
@@ -34,22 +28,11 @@ export const getAllMembers = asyncHandler(
       filter.organizationId = organizationId;
     }
 
-    const [members, total] = await Promise.all([
-      Member.find(filter).sort(sortObj).skip(skip).limit(limitNum).lean(),
-      Member.countDocuments(filter),
-    ]);
+    const members = await Member.find(filter).sort(sortObj).lean();
 
     res.json({
       success: true,
       data: members,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        totalPages: Math.ceil(total / limitNum),
-        hasNext: pageNum < Math.ceil(total / limitNum),
-        hasPrev: pageNum > 1,
-      },
     });
   }
 );
