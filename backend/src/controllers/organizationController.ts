@@ -21,7 +21,7 @@ export const getAllOrganizations = asyncHandler(
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    const sortObj: any = {};
+    const sortObj: Record<string, 1 | -1> = {};
     sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
     const [organizations, total] = await Promise.all([
