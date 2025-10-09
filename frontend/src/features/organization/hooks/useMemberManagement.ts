@@ -4,7 +4,6 @@ import { useAppStore } from '@/store/useAppStore';
 import { Organization, Member } from '@/entities';
 import { InitialMember } from '@/entities/member/index';
 import { validateMembersData } from '@/features/organization/util/validate';
-import { sortMembers } from '@/features/organization/util/sort';
 import { defaultMemberValues } from '@/features/organization/config/formConfig';
 
 interface UseMemberManagementProps {
@@ -27,7 +26,7 @@ export const useMemberManagement = ({
     : [];
 
   // 기존 구성원 + 새로 추가할 구성원들을 합친 데이터
-  const allMembers = sortMembers([
+  const allMembers = [
     ...newMembers.map((member, index) => ({
       ...member,
       _id: `new-${index}`, // 임시 ID
@@ -38,7 +37,7 @@ export const useMemberManagement = ({
       updatedAt: new Date(),
     })),
     ...organizationMembers,
-  ]);
+  ];
 
   // 새 멤버 행 추가
   const handleAddNewRow = () => {
