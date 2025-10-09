@@ -114,7 +114,7 @@ export const OrganizationBasicForm = ({
         </Select>
       </Form.Item>
 
-      <div className="flex flex-col mobile:flex-row justify-end gap-2 pt-4">
+      <div className="flex flex-row mobile:flex-col justify-end gap-2 pt-4">
         <DefaultButton onClick={onCancel}>취소</DefaultButton>
         <DefaultButton type="primary" htmlType="submit" loading={loading}>
           {isEdit ? '수정' : '생성'}
