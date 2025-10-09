@@ -191,6 +191,7 @@ export function EventManager({ organizationId }: EventManagerProps) {
         onCancel={handleModalCancel}
         footer={null}
         width={600}
+        destroyOnHidden
       >
         <EventForm
           event={editingEvent}
@@ -207,6 +208,7 @@ export function EventManager({ organizationId }: EventManagerProps) {
         onCancel={handleParticipantModalCancel}
         footer={null}
         width={800}
+        destroyOnHidden
       >
         {selectedEvent && (
           <ParticipantManager
