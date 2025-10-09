@@ -46,7 +46,6 @@ export const MemberTable = ({
     onCancelEdit,
     onDeleteMember,
   });
-
   return (
     <div className="space-y-4">
       <div className="flex flex-row mobile:flex-col justify-between items-start mobile:items-start gap-2 ">
