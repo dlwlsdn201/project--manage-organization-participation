@@ -1,4 +1,4 @@
-import { EventManager } from '@/widgets/EventManager';
+import { EventManager } from '@/widgets/event-manager';
 
 interface EventsPageProps {
   organizationId: string | null;

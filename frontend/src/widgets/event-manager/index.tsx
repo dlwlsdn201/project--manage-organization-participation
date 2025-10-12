@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useEventStore } from '@/entities/event/model';
 import { Event } from '@/entities';
-import { EventForm } from '@/features/EventForm';
-import { ParticipantManager } from '@/features/ParticipantManager';
+import { EventForm } from '@/features/event-form';
+import { ParticipantManager } from '@/features/participant-manager';
 import { Edit, Trash2, Plus, Users, Calendar, MapPin } from 'lucide-react';
 import { Modal, message, Popconfirm, Badge } from 'antd';
 import { EmptyState } from '@/shared/ui/Empty';

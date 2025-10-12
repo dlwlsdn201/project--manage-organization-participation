@@ -1,4 +1,4 @@
-import { AttendanceTracker } from '@/widgets/AttendanceTracker';
+import { AttendanceTracker } from '@/widgets/attendance-tracker';
 
 interface AnalyticsPageProps {
   organizationId: string | null;

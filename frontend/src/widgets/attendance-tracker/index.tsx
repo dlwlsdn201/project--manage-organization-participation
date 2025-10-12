@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useEventStore } from '@/entities/event/model';
 import { useOrganizationStore } from '../../features/organization/lib';
 import { useMemberStore } from '../../features/organization/lib/member-store';
-import { DateRangeFilter } from '../../features/DateRangeFilter';
+import { DateRangeFilter } from '../../features/date-range-filter';
 import { Calendar, Users, TrendingUp, AlertTriangle } from 'lucide-react';
 
 interface AttendanceTrackerProps {
