@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useEventStore } from '@/entities/event/model';
 import { useOrganizationStore } from '@/features/organization/lib';
 import { useMemberStore } from '@/features/organization/lib/member-store';
-import { Member, Event, Organization } from '@/entities';
+import { Member } from '@/entities';
 
 interface DateRange {
   startDate: Date | null;
