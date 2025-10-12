@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useAppStore } from '../store/useAppStore';
+import { useAppInit } from './model/useAppInit';
+import { useUserStore } from '@/entities/user/model';
 import { useOrganizationStore } from '../features/organization/lib';
-import { OrganizationList } from '../widgets/organization';
-import { EventManager } from '../widgets/EventManager';
-import { AttendanceTracker } from '../widgets/AttendanceTracker';
+import { OrganizationsPage } from '@/pages/organizations';
+import { EventsPage } from '@/pages/events';
+import { AnalyticsPage } from '@/pages/analytics';
 import { Organization } from '../entities/organization';
 import { LoadingSpinner } from '../shared/ui/Spinner';
 import { getCurrentUser } from '../shared/lib/user-utils';
@@ -14,8 +15,13 @@ import { DefaultButton } from '@/shared/ui/Button';
 type TabType = 'organizations' | 'events' | 'analytics';
 
 function App() {
-  const { user, loading, setUser, loadInitialData } = useAppStore();
+  // App-level 초기화 및 로딩 상태
+  const { loading, loadInitialData } = useAppInit();
+  
+  // User 상태
+  const { user, setUser } = useUserStore();
 
+  // Organization 상태
   const { selectedOrganization, setSelectedOrganization } =
     useOrganizationStore();
 
@@ -48,27 +54,21 @@ function App() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'organizations':
-        return <OrganizationList onEditOrganization={handleEditOrganization} />;
+        return <OrganizationsPage onEditOrganization={handleEditOrganization} />;
 
       case 'events':
-        if (!selectedOrganization) {
-          return (
-            <div className="empty-state">
-              <p>모임을 관리하려면 먼저 조직을 선택해주세요.</p>
-            </div>
-          );
-        }
-        return <EventManager organizationId={selectedOrganization._id} />;
+        return (
+          <EventsPage
+            organizationId={selectedOrganization?._id || null}
+          />
+        );
 
       case 'analytics':
-        if (!selectedOrganization) {
-          return (
-            <div className="empty-state">
-              <p>분석을 보려면 먼저 조직을 선택해주세요.</p>
-            </div>
-          );
-        }
-        return <AttendanceTracker organizationId={selectedOrganization._id} />;
+        return (
+          <AnalyticsPage
+            organizationId={selectedOrganization?._id || null}
+          />
+        );
 
       default:
         return null;

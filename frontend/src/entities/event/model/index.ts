@@ -1,5 +1,8 @@
-// Event entity model - 상태 관리와 타입 정의만 담당
+// Event entity model - 상태 관리와 타입 정의
 import { Event } from '../index';
+
+// Export Event Store
+export { useEventStore } from './eventStore';
 
 /**
  * Event 관련 상태 관리

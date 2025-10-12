@@ -1,19 +1,33 @@
 import { useState, useEffect } from 'react';
 import { message } from 'antd';
-import { useAppStore } from '@/store/useAppStore';
+import { useAppInit } from '@/app/model/useAppInit';
+import { useMemberStore } from '@/features/organization/lib/member-store';
 import { Organization, Member } from '@/entities';
 import { InitialMember } from '@/entities/member/index';
 import { validateMembersData } from '@/features/organization/util/validate';
 import { defaultMemberValues } from '@/features/organization/config/formConfig';
+import {
+  handleAddNewMember,
+  handleUpdateExistingMember,
+  handleSaveAllMembers,
+  handleDeleteMemberAction,
+} from '@/features/organization/lib/memberActions';
 
 interface UseMemberManagementProps {
   organization?: Organization | null;
 }
 
+/**
+ * 멤버 관리 Hook
+ * - 멤버 추가/수정/삭제
+ * - 인라인 편집 기능
+ * - 일괄 저장 기능
+ */
 export const useMemberManagement = ({
   organization,
 }: UseMemberManagementProps) => {
-  const { members, addMember, updateMember, deleteMember } = useAppStore();
+  const { members } = useMemberStore();
+  const { addMember, updateMember, deleteMember } = useAppInit();
   const [memberLoading, setMemberLoading] = useState(false);
   const [newMembers, setNewMembers] = useState<InitialMember[]>([]);
   const [editedMembers, setEditedMembers] = useState<
@@ -70,65 +84,30 @@ export const useMemberManagement = ({
       const index = parseInt(key.replace('new-', ''));
       const memberData = newMembers[index];
 
-      if (!memberData.name || !memberData.district || !memberData.birthYear) {
-        message.error('이름, 출생년도, 지역은 필수 입력 항목입니다.');
-        return;
-      }
-
-      try {
-        await addMember({
-          name: memberData.name!,
-          gender: memberData.gender!,
-          birthYear: memberData.birthYear!,
-          district: memberData.district!,
-          organizationId: organization._id,
-          status: 'active',
-          joinedAt: new Date(),
-        });
-
-        // 새 구성원 목록에서 제거
+      const success = await handleAddNewMember(
+        memberData,
+        organization,
+        addMember
+      );
+      if (success) {
         setNewMembers((prev) => prev.filter((_, i) => i !== index));
-        message.success('구성원이 추가되었습니다.');
-      } catch {
-        message.error('구성원 추가 중 오류가 발생했습니다.');
       }
     } else {
-      // 기존 구성원 수정 처리
       const changes = editedMembers.get(key);
-      if (!changes || Object.keys(changes).length === 0) {
-        message.info('변경사항이 없습니다.');
-        return;
-      }
+      if (!changes) return;
 
-      const existingMember = organizationMembers.find((m) => m._id === key);
-      if (!existingMember) {
-        message.error('구성원을 찾을 수 없습니다.');
-        return;
-      }
-
-      const updatedMember = { ...existingMember, ...changes };
-      if (
-        !updatedMember.name ||
-        !updatedMember.district ||
-        !updatedMember.birthYear
-      ) {
-        message.error('이름, 출생년도, 지역은 필수 입력 항목입니다.');
-        return;
-      }
-
-      try {
-        await updateMember(updatedMember);
-
-        // 편집된 멤버 목록에서 제거
+      const success = await handleUpdateExistingMember(
+        key,
+        changes,
+        organizationMembers,
+        updateMember
+      );
+      if (success) {
         setEditedMembers((prev) => {
           const newMap = new Map(prev);
           newMap.delete(key);
           return newMap;
         });
-
-        message.success('구성원 정보가 수정되었습니다.');
-      } catch {
-        message.error('구성원 수정 중 오류가 발생했습니다.');
       }
     }
   };
@@ -187,83 +166,25 @@ export const useMemberManagement = ({
     }
 
     setMemberLoading(true);
-    try {
-      let addedCount = 0;
-      let updatedCount = 0;
+    const result = await handleSaveAllMembers(
+      newMembers,
+      editedMembers,
+      organizationMembers,
+      organization,
+      addMember,
+      updateMember
+    );
 
-      // 1. 새로운 구성원들 처리
-      const validNewMembers = newMembers.filter(
-        (member) => member.name && member.district && member.birthYear
-      );
-
-      const addPromises = validNewMembers.map((memberData) =>
-        addMember({
-          name: memberData.name!,
-          gender: memberData.gender!,
-          birthYear: memberData.birthYear!,
-          district: memberData.district!,
-          organizationId: organization._id,
-          status: 'active',
-          joinedAt: new Date(),
-        })
-      );
-      await Promise.all(addPromises);
-      addedCount = validNewMembers.length;
-
-      // 2. 기존 구성원들의 변경사항 처리
-      const updatePromises = [];
-      for (const [memberId, changes] of editedMembers.entries()) {
-        const existingMember = organizationMembers.find(
-          (m) => m._id === memberId
-        );
-        if (existingMember && Object.keys(changes).length > 0) {
-          // 필수 필드 검증
-          const updatedMember = { ...existingMember, ...changes };
-          if (
-            updatedMember.name &&
-            updatedMember.district &&
-            updatedMember.birthYear
-          ) {
-            updatePromises.push(updateMember(updatedMember));
-          }
-        }
-      }
-      await Promise.all(updatePromises);
-      updatedCount = updatePromises.length;
-
-      // 상태 초기화 (새 멤버만 초기화, 편집 모드는 유지)
+    if (result.success) {
       setNewMembers([]);
       setEditedMembers(new Map());
-      // 편집 모드는 유지하여 연속으로 멤버 추가 가능
-
-      // 성공 메시지
-      const messages = [];
-      if (addedCount > 0) messages.push(`${addedCount}명 추가`);
-      if (updatedCount > 0) messages.push(`${updatedCount}명 수정`);
-
-      if (messages.length > 0) {
-        message.success(
-          `구성원 정보가 저장되었습니다. (${messages.join(', ')})`
-        );
-      } else {
-        message.info('저장할 변경사항이 없습니다.');
-      }
-    } catch (error) {
-      console.error('구성원 저장 오류:', error);
-      message.error('구성원 저장 중 오류가 발생했습니다.');
-    } finally {
-      setMemberLoading(false);
     }
+    setMemberLoading(false);
   };
 
   // 멤버 삭제
   const handleDeleteMember = async (memberId: string) => {
-    try {
-      await deleteMember(memberId);
-      message.success('구성원이 삭제되었습니다.');
-    } catch {
-      message.error('구성원 삭제 중 오류가 발생했습니다.');
-    }
+    await handleDeleteMemberAction(memberId, deleteMember);
   };
 
   // 편집 모드 종료
