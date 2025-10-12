@@ -5,7 +5,7 @@ dotenv.config();
 
 const MONGODB_URI =
   process.env.MONGODB_URI ||
-  'mongodb+srv://devleejinw:8tICNSHK4XFoqdyr@event.jzctv36.mongodb.net/organization-participation?retryWrites=true&w=majority&appName=event';
+  'mongodb://localhost:27017/organization-participation';
 
 export const connectDatabase = async (): Promise<void> => {
   try {
