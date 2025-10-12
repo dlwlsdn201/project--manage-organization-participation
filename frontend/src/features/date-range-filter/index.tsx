@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { DatePicker, Select } from 'antd';
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -55,11 +55,11 @@ export function DateRangeFilter({
     onDateChange({ startDate: newStartDate, endDate: newEndDate });
   };
 
-  const handleRangeChange = (dates: unknown) => {
-    if (dates && Array.isArray(dates)) {
+  const handleRangeChange = (dates: [Dayjs | null, Dayjs | null] | null) => {
+    if (dates && dates[0] && dates[1]) {
       onDateChange({
-        startDate: dates[0] ? dates[0].toDate() : null,
-        endDate: dates[1] ? dates[1].toDate() : null,
+        startDate: dates[0].toDate(),
+        endDate: dates[1].toDate(),
       });
       setPreset('custom');
     } else {

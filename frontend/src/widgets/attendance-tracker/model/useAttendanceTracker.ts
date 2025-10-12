@@ -37,7 +37,7 @@ export const useAttendanceTracker = (organizationId: string) => {
   const { events } = useEventStore();
   const { organizations } = useOrganizationStore();
   const { members } = useMemberStore();
-  
+
   const [dateRange, setDateRange] = useState<DateRange>({
     startDate: null,
     endDate: null,
@@ -186,4 +186,3 @@ export const useAttendanceTracker = (organizationId: string) => {
 };
 
 export type { AttendanceStats, MemberAttendanceStat, DateRange };
-

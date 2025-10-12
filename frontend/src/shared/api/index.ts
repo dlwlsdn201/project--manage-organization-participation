@@ -129,11 +129,11 @@ export const activityLogApi = {
 
 // 분석 API
 export const analyticsApi = {
-  async getAttendanceStats(organizationId: string): Promise<unknown> {
-    return apiClient.get<unknown>(`/analytics/attendance/${organizationId}`);
+  async getAttendanceStats(organizationId: string) {
+    return apiClient.get(`/analytics/attendance/${organizationId}`);
   },
 
-  async getEventStats(organizationId: string): Promise<unknown> {
-    return apiClient.get<unknown>(`/analytics/events/${organizationId}`);
+  async getEventStats(organizationId: string) {
+    return apiClient.get(`/analytics/events/${organizationId}`);
   },
 };
