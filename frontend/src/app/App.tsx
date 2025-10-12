@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useAppStore } from '../store/useAppStore';
+import { useAppInit } from './model/useAppInit';
+import { useUserStore } from '@/entities/user/model';
 import { useOrganizationStore } from '../features/organization/lib';
 import { OrganizationsPage } from '@/pages/organizations';
 import { EventsPage } from '@/pages/events';
@@ -14,8 +15,13 @@ import { DefaultButton } from '@/shared/ui/Button';
 type TabType = 'organizations' | 'events' | 'analytics';
 
 function App() {
-  const { user, loading, setUser, loadInitialData } = useAppStore();
+  // App-level 초기화 및 로딩 상태
+  const { loading, loadInitialData } = useAppInit();
+  
+  // User 상태
+  const { user, setUser } = useUserStore();
 
+  // Organization 상태
   const { selectedOrganization, setSelectedOrganization } =
     useOrganizationStore();
 

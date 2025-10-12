@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useAppStore } from '@/store/useAppStore';
+import { useEventStore } from '@/entities/event/model';
 import { Event } from '@/entities';
 import { EventForm } from '@/features/EventForm';
 import { ParticipantManager } from '@/features/ParticipantManager';
@@ -14,7 +14,7 @@ interface EventManagerProps {
 }
 
 export function EventManager({ organizationId }: EventManagerProps) {
-  const { events, loading, deleteEvent } = useAppStore();
+  const { events, loading, deleteEvent } = useEventStore();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isParticipantModalVisible, setIsParticipantModalVisible] =
     useState(false);

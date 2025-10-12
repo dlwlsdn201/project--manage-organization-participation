@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useAppStore } from '../../store/useAppStore';
+import { useEventStore } from '@/entities/event/model';
 import { useOrganizationStore } from '../../features/organization/lib';
 import { useMemberStore } from '../../features/organization/lib/member-store';
 import { DateRangeFilter } from '../../features/DateRangeFilter';
@@ -10,7 +10,7 @@ interface AttendanceTrackerProps {
 }
 
 export function AttendanceTracker({ organizationId }: AttendanceTrackerProps) {
-  const { events } = useAppStore();
+  const { events } = useEventStore();
   const { organizations } = useOrganizationStore();
   const { members } = useMemberStore();
   const [dateRange, setDateRange] = useState<{

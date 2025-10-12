@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { message } from 'antd';
-import { useAppStore } from '@/store/useAppStore';
+import { useAppInit } from '@/app/model/useAppInit';
+import { useMemberStore } from '@/features/organization/lib/member-store';
 import { Organization, Member } from '@/entities';
 import { InitialMember } from '@/entities/member/index';
 import { validateMembersData } from '@/features/organization/util/validate';
@@ -13,7 +14,8 @@ interface UseMemberManagementProps {
 export const useMemberManagement = ({
   organization,
 }: UseMemberManagementProps) => {
-  const { members, addMember, updateMember, deleteMember } = useAppStore();
+  const { members } = useMemberStore();
+  const { addMember, updateMember, deleteMember } = useAppInit();
   const [memberLoading, setMemberLoading] = useState(false);
   const [newMembers, setNewMembers] = useState<InitialMember[]>([]);
   const [editedMembers, setEditedMembers] = useState<

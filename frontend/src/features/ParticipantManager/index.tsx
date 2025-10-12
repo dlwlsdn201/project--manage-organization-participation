@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useAppStore } from '@/store/useAppStore';
+import { useEventStore } from '@/entities/event/model';
+import { useMemberStore } from '@/features/organization/lib/member-store';
 import { Member } from '@/entities';
 import { Table, Checkbox, message, Space } from 'antd';
 import { UserPlus } from 'lucide-react';
@@ -18,7 +19,8 @@ export const ParticipantManager = ({
   onSuccess,
   onCancel,
 }: ParticipantManagerProps) => {
-  const { events, members, updateEvent } = useAppStore();
+  const { events, updateEvent } = useEventStore();
+  const { members } = useMemberStore();
   const [loading, setLoading] = useState(false);
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
     []
