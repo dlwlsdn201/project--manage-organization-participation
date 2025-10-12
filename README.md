@@ -14,14 +14,11 @@
 
 - [프로젝트 개요](#-프로젝트-개요)
 - [주요 기능](#-주요-기능)
+- [데모](#-데모)
 - [기술 스택](#-기술-스택)
 - [아키텍처](#-아키텍처)
 - [프로젝트 구조](#-프로젝트-구조)
-- [시작하기](#-시작하기)
-- [개발 가이드](#-개발-가이드)
 - [API 문서](#-api-문서)
-- [배포](#-배포)
-- [테스트](#-테스트)
 - [기여하기](#-기여하기)
 - [라이선스](#-라이선스)
 
@@ -37,10 +34,6 @@
 - 🎯 **체계적인 관리**: 조직, 구성원, 모임을 통합 관리
 - 📈 **참여 독려**: 참여 규칙 설정으로 구성원의 적극적인 활동 유도
 - 🚀 **확장 가능**: Feature-Sliced Design 아키텍처로 유지보수와 확장이 용이
-
-### 데모
-
-🌐 **Live Demo**: [https://somoim-group-management.vercel.app/](https://somoim-group-management.vercel.app/)
 
 ---
 
@@ -84,6 +77,30 @@
 
 ---
 
+## 🚀 데모
+
+### 라이브 데모
+
+🌐 **Live Demo**: [https://somoim-group-management.vercel.app/](https://somoim-group-management.vercel.app/)
+
+### ⚠️ 중요 안내
+
+현재 이 프로젝트는 **데모 목적**으로 공개되어 있습니다. 사용자 인증 시스템이 아직 구현되지 않아, 데모 사이트의 데이터는 **누구나 조회 및 수정이 가능**합니다.
+
+**주의사항:**
+
+- 🔒 개인정보나 민감한 데이터를 입력하지 마세요
+- 📊 데모 데이터는 언제든지 초기화될 수 있습니다
+- 👥 다른 사용자가 생성/수정한 데이터가 표시될 수 있습니다
+
+### 향후 계획
+
+- 🔐 JWT 기반 사용자 인증/인가 시스템 구현
+- 👤 개인별 데이터 격리 및 권한 관리
+- 🔑 소셜 로그인 (Google, GitHub) 지원
+
+---
+
 ## 🛠 기술 스택
 
 ### Frontend
@@ -117,7 +134,7 @@
 
 ### DevOps & Tools
 
-| 카테고리             | 기술           | 용도 |
+| 카테고리             | 기술           | 버전 |
 | -------------------- | -------------- | ---- |
 | **Package Manager**  | pnpm           | 9.11 |
 | **Monorepo**         | pnpm Workspace | -    |
@@ -341,160 +358,6 @@ project--manage-organization-participation/
 
 ---
 
-## 🚀 시작하기
-
-### 사전 요구사항
-
-- **Node.js**: v22 이상
-- **pnpm**: v9.11 이상
-- **MongoDB**: 로컬 또는 MongoDB Atlas 계정
-
-### 1. 저장소 클론
-
-```bash
-git clone https://github.com/yourusername/project--manage-organization-participation.git
-cd project--manage-organization-participation
-```
-
-### 2. 의존성 설치
-
-```bash
-# pnpm이 없는 경우 설치
-npm install -g pnpm@9.11.0
-
-# 전체 워크스페이스 의존성 설치
-pnpm install
-```
-
-### 3. 환경 변수 설정
-
-#### Frontend (.env.local)
-
-```bash
-# frontend/.env.local 파일 생성
-VITE_API_BASE_URL=http://localhost:8000/api
-```
-
-#### Backend (.env)
-
-```bash
-# backend/.env 파일 생성
-NODE_ENV=development
-PORT=8000
-MONGODB_URI=mongodb://localhost:27017/organization-participation
-JWT_SECRET=your-secret-key-change-in-production
-FRONTEND_URL=http://localhost:5173
-```
-
-### 4. MongoDB 실행
-
-#### Option A: 로컬 MongoDB
-
-```bash
-# macOS (Homebrew)
-brew services start mongodb-community
-
-# Docker
-docker run -d --name mongodb -p 27017:27017 -v mongodb_data:/data/db mongo:7.0
-```
-
-#### Option B: MongoDB Atlas
-
-1. [MongoDB Atlas](https://cloud.mongodb.com)에서 무료 클러스터 생성
-2. 연결 문자열을 `backend/.env`의 `MONGODB_URI`에 설정
-
-### 5. 시드 데이터 생성 (선택사항)
-
-```bash
-cd backend
-pnpm run seed
-```
-
-### 6. 개발 서버 실행
-
-#### 전체 실행 (권장)
-
-```bash
-# 루트 디렉터리에서
-pnpm run dev
-```
-
-이 명령어는 프론트엔드와 백엔드를 동시에 실행합니다:
-
-- Frontend: http://localhost:5173
-- Backend: http://localhost:8000
-
-#### 개별 실행
-
-```bash
-# Frontend만 실행
-cd frontend
-pnpm run dev
-
-# Backend만 실행
-cd backend
-pnpm run dev
-```
-
----
-
-## 💻 개발 가이드
-
-### 코드 스타일
-
-프로젝트는 일관된 코드 스타일을 유지합니다:
-
-```bash
-# ESLint 실행
-pnpm run lint
-
-# Prettier 포맷팅 (설정된 경우)
-pnpm run format
-```
-
-### 네이밍 규칙
-
-| 대상           | 규칙                       | 예시                     |
-| -------------- | -------------------------- | ------------------------ |
-| 폴더/디렉터리  | kebab-case                 | `date-range-filter/`     |
-| React 컴포넌트 | PascalCase.tsx             | `EventCard.tsx`          |
-| Hooks          | camelCase + `use` prefix   | `useMemberManagement.ts` |
-| Store          | camelCase + `Store` suffix | `eventStore.ts`          |
-| 함수           | camelCase                  | `handleSubmit()`         |
-| 변수           | camelCase                  | `organizationId`         |
-| 상수           | UPPER_SNAKE_CASE           | `MAX_RETRY_COUNT`        |
-| 인터페이스     | PascalCase                 | `MemberProps`            |
-
-### TypeScript 설정
-
-- **Strict Mode**: 활성화
-- **Any 타입**: 사용 금지 (프로젝트 전체에서 0개)
-- **Unknown 타입**: 명시적 타입 가드와 함께 사용
-
-### Git 커밋 컨벤션
-
-```bash
-# 기능 추가
-git commit -m "feat: 멤버 일괄 삭제 기능 추가"
-
-# 버그 수정
-git commit -m "fix: 참여율 계산 오류 수정"
-
-# 리팩터링
-git commit -m "refactor: attendance-tracker 모듈화"
-
-# 문서 업데이트
-git commit -m "docs: API 문서 업데이트"
-
-# 스타일 변경
-git commit -m "style: 코드 포맷팅 적용"
-
-# 테스트 추가
-git commit -m "test: 조직 CRUD 테스트 추가"
-```
-
----
-
 ## 📚 API 문서
 
 ### Base URL
@@ -698,124 +561,6 @@ GET /analytics/organization/:organizationId?startDate=2024-01-01&endDate=2024-12
 
 ---
 
-## 🧪 테스트
-
-### Frontend 테스트
-
-```bash
-cd frontend
-
-# 전체 테스트 실행
-pnpm test
-
-# Watch 모드로 테스트
-pnpm run test:auto
-
-# 커버리지 리포트 생성
-pnpm test -- --coverage
-```
-
-**테스트 커버리지 목표:**
-
-- 전역: 50% 이상
-- shared 레이어: 60% 이상
-- pages 레이어: 60% 이상
-- app 레이어: 80% 이상
-
-### Backend 테스트
-
-```bash
-cd backend
-
-# 전체 테스트 실행
-pnpm test
-
-# Watch 모드로 테스트
-pnpm run test:watch
-```
-
----
-
-## 🏗 빌드
-
-### Production 빌드
-
-```bash
-# Frontend 빌드
-cd frontend
-pnpm run build
-
-# Backend 빌드
-cd backend
-pnpm run build
-```
-
-빌드 결과물:
-
-- Frontend: `frontend/dist/`
-- Backend: `backend/dist/`
-
-### Production 실행
-
-```bash
-# Frontend (빌드 결과 미리보기)
-cd frontend
-pnpm run start
-
-# Backend
-cd backend
-pnpm run start
-```
-
----
-
-## 🚀 배포
-
-### 자동 배포 (GitHub Actions)
-
-1. GitHub 저장소에 코드를 push
-2. `main` 브랜치에 push 시 자동으로 Vercel과 Render에 배포
-3. GitHub Actions에서 배포 진행 상황 확인
-
-### 필요한 GitHub Secrets
-
-**.github/workflows/deploy.yml**에 다음 Secrets를 설정해야 합니다:
-
-```
-VERCEL_TOKEN             # Vercel API 토큰
-VERCEL_ORG_ID            # Vercel 조직 ID
-VERCEL_PROJECT_ID        # Vercel 프로젝트 ID
-RENDER_API_KEY           # Render API 키
-RENDER_SERVICE_ID        # Render 서비스 ID
-VITE_API_BASE_URL        # 프론트엔드 API URL
-```
-
-### 수동 배포
-
-#### Vercel (Frontend)
-
-```bash
-cd frontend
-pnpm install -g vercel
-vercel --prod
-```
-
-#### Render (Backend)
-
-Render 대시보드에서 "Manual Deploy" 클릭 또는:
-
-```bash
-curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
-  -H "Authorization: Bearer $RENDER_API_KEY" \
-  -H "Content-Type: application/json"
-```
-
-### 배포 환경 설정
-
-자세한 배포 가이드는 [DEPLOYMENT.md](./DEPLOYMENT.md)를 참조하세요.
-
----
-
 ## 📈 성능 최적화
 
 ### Frontend
@@ -858,6 +603,8 @@ curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
 
 ## 🤝 기여하기
 
+> **이 섹션은 프로젝트 기여자 및 내부 개발자를 위한 가이드입니다.**
+
 프로젝트에 기여해주셔서 감사합니다! 다음 단계를 따라주세요:
 
 ### 1. Fork & Clone
@@ -897,6 +644,41 @@ GitHub에서 Pull Request를 생성해주세요.
 - ✅ 테스트 코드 작성
 - ✅ ESLint 규칙 준수
 - ✅ 명확한 커밋 메시지
+
+### 네이밍 규칙
+
+| 대상           | 규칙                       | 예시                     |
+| -------------- | -------------------------- | ------------------------ |
+| 폴더/디렉터리  | kebab-case                 | `date-range-filter/`     |
+| React 컴포넌트 | PascalCase.tsx             | `EventCard.tsx`          |
+| Hooks          | camelCase + `use` prefix   | `useMemberManagement.ts` |
+| Store          | camelCase + `Store` suffix | `eventStore.ts`          |
+| 함수           | camelCase                  | `handleSubmit()`         |
+| 변수           | camelCase                  | `organizationId`         |
+| 상수           | UPPER_SNAKE_CASE           | `MAX_RETRY_COUNT`        |
+| 인터페이스     | PascalCase                 | `MemberProps`            |
+
+### Git 커밋 컨벤션
+
+```bash
+# 기능 추가
+git commit -m "feat: 멤버 일괄 삭제 기능 추가"
+
+# 버그 수정
+git commit -m "fix: 참여율 계산 오류 수정"
+
+# 리팩터링
+git commit -m "refactor: attendance-tracker 모듈화"
+
+# 문서 업데이트
+git commit -m "docs: API 문서 업데이트"
+
+# 스타일 변경
+git commit -m "style: 코드 포맷팅 적용"
+
+# 테스트 추가
+git commit -m "test: 조직 CRUD 테스트 추가"
+```
 
 ---
 
