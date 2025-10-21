@@ -15,7 +15,12 @@ export const corsOptions = {
     }
 
     // 허용된 origin 목록
-    const allowedOrigins = [FRONTEND_URL, 'http://localhost:3000'];
+    const allowedOrigins = [
+      FRONTEND_URL,
+      'http://localhost:3000',
+      'http://localhost:5173',
+      '0.0.0.0',
+    ];
 
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -25,7 +30,13 @@ export const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Origin',
+    'Accept',
+  ],
 };
 
 export const corsMiddleware = cors(corsOptions);
