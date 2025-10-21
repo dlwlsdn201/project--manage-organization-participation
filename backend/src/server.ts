@@ -11,7 +11,7 @@ import { errorHandler, notFoundHandler } from '@/middleware/errorHandler.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 // 미들웨어 설정
 app.use(helmet()); // 보안 헤더
@@ -71,7 +71,7 @@ const startServer = async () => {
     await connectDatabase();
 
     // 서버 시작
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 서버가 포트 ${PORT}에서 실행 중입니다.`);
       console.log(`🌐 개발 서버: http://localhost:${PORT}`);
       console.log(`📱 프론트엔드: ${process.env.FRONTEND_URL}`);
