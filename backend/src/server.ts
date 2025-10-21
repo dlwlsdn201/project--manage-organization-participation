@@ -20,6 +20,11 @@ app.use(morgan('combined')); // 로깅
 app.use(express.json({ limit: '10mb' })); // JSON 파싱
 app.use(express.urlencoded({ extended: true, limit: '10mb' })); // URL 인코딩
 
+// 헬스 체크를 위한 API 라우팅
+app.get('/healthz', (req, res) => {
+  res.sendStatus(200);
+});
+
 // 기본 라우트
 app.get('/', (req, res) => {
   res.json({

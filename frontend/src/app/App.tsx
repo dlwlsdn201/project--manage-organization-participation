@@ -11,13 +11,16 @@ import { getCurrentUser } from '../shared/lib/user-utils';
 import { message } from 'antd';
 import { TabButton } from '../shared/ui/Button';
 import { DefaultButton } from '@/shared/ui/Button';
+import { startSelfPing } from '@/shared/api/health';
 
 type TabType = 'organizations' | 'events' | 'analytics';
 
 function App() {
+  startSelfPing();
+
   // App-level 초기화 및 로딩 상태
   const { loading, loadInitialData } = useAppInit();
-  
+
   // User 상태
   const { user, setUser } = useUserStore();
 
@@ -54,20 +57,18 @@ function App() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'organizations':
-        return <OrganizationsPage onEditOrganization={handleEditOrganization} />;
+        return (
+          <OrganizationsPage onEditOrganization={handleEditOrganization} />
+        );
 
       case 'events':
         return (
-          <EventsPage
-            organizationId={selectedOrganization?._id || null}
-          />
+          <EventsPage organizationId={selectedOrganization?._id || null} />
         );
 
       case 'analytics':
         return (
-          <AnalyticsPage
-            organizationId={selectedOrganization?._id || null}
-          />
+          <AnalyticsPage organizationId={selectedOrganization?._id || null} />
         );
 
       default:
