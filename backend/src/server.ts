@@ -7,6 +7,13 @@ import { connectDatabase } from './config/database.js';
 import { corsMiddleware } from './middleware/cors.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
+// API 라우트 import
+import organizationRoutes from './routes/organizationRoutes.js';
+import memberRoutes from './routes/memberRoutes.js';
+import activityLogRoutes from './routes/activityLogRoutes.js';
+import eventRoutes from './routes/eventRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
+
 // 환경 변수 로드
 dotenv.config();
 
@@ -48,13 +55,6 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
-
-// API 라우트 import
-import organizationRoutes from './routes/organizationRoutes.js';
-import memberRoutes from './routes/memberRoutes.js';
-import activityLogRoutes from './routes/activityLogRoutes.js';
-import eventRoutes from './routes/eventRoutes.js';
-import analyticsRoutes from './routes/analyticsRoutes.js';
 
 // API 라우트 설정
 app.use('/api/organizations', organizationRoutes);

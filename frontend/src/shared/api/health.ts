@@ -6,7 +6,8 @@ export const startSelfPing = () => {
     return;
   }
 
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+  const baseUrl =
+    import.meta.env.VITE_HEALTH_API_URL || 'http://localhost:8000';
   const healthUrl = `${baseUrl}/health`;
   // Render 무료 플랜은 15분 유휴 시 중지되므로 14분마다 핑
   const intervalMs = 14 * 60 * 1000; // 14분 = 840,000ms
