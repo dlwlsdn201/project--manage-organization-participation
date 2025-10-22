@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "PORT=8000 nodemon --exec tsx --tsconfig tsconfig.json src/server.ts",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "seed": "tsx --tsconfig tsconfig.json src/scripts/seed.ts",
     "test": "jest",

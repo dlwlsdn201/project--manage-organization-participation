@@ -3,9 +3,9 @@ import dotenv from 'dotenv';
 import morgan from 'morgan';
 import helmet from 'helmet';
 
-import { connectDatabase } from '@/config/database.js';
-import { corsMiddleware } from '@/middleware/cors.js';
-import { errorHandler, notFoundHandler } from '@/middleware/errorHandler.js';
+import { connectDatabase } from './config/database.js';
+import { corsMiddleware } from './middleware/cors.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 // 환경 변수 로드
 dotenv.config();
@@ -21,7 +21,7 @@ app.use(express.json({ limit: '10mb' })); // JSON 파싱
 app.use(express.urlencoded({ extended: true, limit: '10mb' })); // URL 인코딩
 
 // 헬스 체크를 위한 API 라우팅
-app.get('/healthz', (req, res) => {
+app.get('/health', (req, res) => {
   res.sendStatus(200);
 });
 
@@ -50,11 +50,11 @@ app.get('/health', (req, res) => {
 });
 
 // API 라우트 import
-import organizationRoutes from '@/routes/organizationRoutes.js';
-import memberRoutes from '@/routes/memberRoutes.js';
-import activityLogRoutes from '@/routes/activityLogRoutes.js';
-import eventRoutes from '@/routes/eventRoutes.js';
-import analyticsRoutes from '@/routes/analyticsRoutes.js';
+import organizationRoutes from './routes/organizationRoutes.js';
+import memberRoutes from './routes/memberRoutes.js';
+import activityLogRoutes from './routes/activityLogRoutes.js';
+import eventRoutes from './routes/eventRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
 
 // API 라우트 설정
 app.use('/api/organizations', organizationRoutes);

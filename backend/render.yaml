@@ -3,8 +3,8 @@ services:
     name: organization-participation-backend
     runtime: node
     plan: free
-    buildCommand: pnpm install && pnpm run build
-    startCommand: pnpm start
+    buildCommand: cd backend && pnpm install && pnpm run build
+    startCommand: cd backend && pnpm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -16,5 +16,7 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
+      - key: RENDER_URL
+        value: https://project-manage-organization-participation.onrender.com
     healthCheckPath: /health
     autoDeploy: true
