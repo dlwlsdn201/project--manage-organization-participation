@@ -15,17 +15,11 @@ export const getAllEvents = asyncHandler(
     res: Response<ApiResponse>
   ) => {
     const {
-      page = '1',
-      limit = '20',
       sortBy = 'date',
       sortOrder = 'desc',
       organizationId,
       status,
     } = req.query;
-
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const skip = (pageNum - 1) * limitNum;
 
     const sortObj: Record<string, 1 | -1> = {};
     sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
@@ -39,21 +33,21 @@ export const getAllEvents = asyncHandler(
       filter.status = status;
     }
 
-    const [events, total] = await Promise.all([
-      Event.find(filter).sort(sortObj).skip(skip).limit(limitNum).lean(),
-      Event.countDocuments(filter),
-    ]);
+    // limit/skip 없이 전체 데이터 조회
+    const events = await Event.find(filter).sort(sortObj).lean();
+    const total = events.length;
 
     res.json({
       success: true,
       data: events,
+      // 참고: 클라이언트 호환성을 위해 pagination은 고정값으로 반환
       pagination: {
-        page: pageNum,
-        limit: limitNum,
+        page: 1,
+        limit: total,
         total,
-        totalPages: Math.ceil(total / limitNum),
-        hasNext: pageNum < Math.ceil(total / limitNum),
-        hasPrev: pageNum > 1,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false,
       },
     });
   }
@@ -86,39 +80,25 @@ export const getEventsByOrganization = asyncHandler(
     res: Response<ApiResponse>
   ) => {
     const { organizationId } = req.params;
-    const {
-      page = '1',
-      limit = '20',
-      sortBy = 'date',
-      sortOrder = 'desc',
-    } = req.query;
-
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const skip = (pageNum - 1) * limitNum;
+    const { sortBy = 'date', sortOrder = 'desc' } = req.query;
 
     const sortObj: Record<string, 1 | -1> = {};
     sortObj[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
-    const [events, total] = await Promise.all([
-      Event.find({ organizationId })
-        .sort(sortObj)
-        .skip(skip)
-        .limit(limitNum)
-        .lean(),
-      Event.countDocuments({ organizationId }),
-    ]);
+    // limit/skip 없이 전체 데이터 조회
+    const events = await Event.find({ organizationId }).sort(sortObj).lean();
+    const total = events.length;
 
     res.json({
       success: true,
       data: events,
       pagination: {
-        page: pageNum,
-        limit: limitNum,
+        page: 1,
+        limit: total,
         total,
-        totalPages: Math.ceil(total / limitNum),
-        hasNext: pageNum < Math.ceil(total / limitNum),
-        hasPrev: pageNum > 1,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false,
       },
     });
   }
