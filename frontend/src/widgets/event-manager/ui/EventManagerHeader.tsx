@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react';
 import { Badge } from 'antd';
 import { DefaultButton } from '@/shared/ui/Button';
+import { SortingFilter } from '@/features/filter/ui/SortingFilter';
 
 interface EventManagerHeaderProps {
   totalEvents: number;
@@ -36,10 +37,17 @@ export const EventManagerHeader = ({
             />
             개
           </div>
+          <SortingFilter />
         </div>
-        <DefaultButton onClick={onAddEvent} icon={<Plus size={16} />} type="primary">
-          새 모임 추가
-        </DefaultButton>
+        <div className="flex items-center gap-3">
+          <DefaultButton
+            onClick={onAddEvent}
+            icon={<Plus size={16} />}
+            type="primary"
+          >
+            새 모임 추가
+          </DefaultButton>
+        </div>
       </div>
 
       {/* 검색바 */}
@@ -55,4 +63,3 @@ export const EventManagerHeader = ({
     </>
   );
 };
-
